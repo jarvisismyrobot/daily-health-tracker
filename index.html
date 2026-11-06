@@ -400,26 +400,26 @@
     <div class="card" id="card-status">
       <div class="card-head">
         <h2><span class="num">1</span>太太當日狀態</h2>
-        <span class="pill empty" data-pill="status">未填</span>
+        <span class="pill empty" data-pill="status">選填</span>
       </div>
       <div class="inherit-note" id="inherit-note">已自動填入昨日嘅數值，冇變就唔使理，有變先改返。</div>
       <div class="grid3">
-        <div class="field"><label for="f-weight">體重</label>
+        <div class="field"><label for="f-weight">體重<span style="color:var(--faint);font-weight:400">（選填）</span></label>
           <div class="unit-wrap"><input id="f-weight" size="1" list="dl-weight" inputmode="decimal" autocomplete="off" placeholder="—"><span class="unit">磅</span><span class="dd">▾</span></div>
         </div>
-        <div class="field"><label for="f-protein">Protein</label>
+        <div class="field"><label for="f-protein">Protein<span style="color:var(--faint);font-weight:400">（選填）</span></label>
           <div class="unit-wrap"><input id="f-protein" size="1" list="dl-protein" inputmode="decimal" autocomplete="off" placeholder="—"><span class="unit">%</span><span class="dd">▾</span></div>
         </div>
-        <div class="field"><label for="f-fat">Fat</label>
+        <div class="field"><label for="f-fat">Fat<span style="color:var(--faint);font-weight:400">（選填）</span></label>
           <div class="unit-wrap"><input id="f-fat" size="1" list="dl-fat" inputmode="decimal" autocomplete="off" placeholder="—"><span class="unit">%</span><span class="dd">▾</span></div>
         </div>
       </div>
       <div class="bp-row">
-        <div class="field"><label for="f-sys">血壓 · 上壓</label>
+        <div class="field"><label for="f-sys">上壓<span style="color:var(--faint);font-weight:400">（選填）</span></label>
           <div class="unit-wrap"><input id="f-sys" size="1" class="wide-unit" list="dl-sys" inputmode="numeric" autocomplete="off" placeholder="—"><span class="unit">mmHg</span><span class="dd">▾</span></div>
         </div>
         <div class="slash">/</div>
-        <div class="field"><label for="f-dia">下壓</label>
+        <div class="field"><label for="f-dia">下壓<span style="color:var(--faint);font-weight:400">（選填）</span></label>
           <div class="unit-wrap"><input id="f-dia" size="1" class="wide-unit" list="dl-dia" inputmode="numeric" autocomplete="off" placeholder="—"><span class="unit">mmHg</span><span class="dd">▾</span></div>
         </div>
         <div class="field"><label for="f-hr">心跳<span style="color:var(--faint);font-weight:400">（選填）</span></label>
@@ -528,7 +528,7 @@
       <div class="submit-msg" id="submit-msg"></div>
     </div>
     <div class="foot-note">只作記錄之用 · 可補填今日及前 3 日</div>
-    <div class="ver-line">v1.0.5 · <button type="button" id="upd-btn">檢查更新</button></div>
+    <div class="ver-line">v1.0.6 · <button type="button" id="upd-btn">檢查更新</button></div>
     <div class="upd-note" id="upd-note"></div>
 
     <datalist id="dl-weight"></datalist>
@@ -630,7 +630,7 @@
 <script>
 (function () {
   'use strict';
-  var APP_VERSION = '1.0.5';
+  var APP_VERSION = '1.0.6';
   var LS_KEY = 'dht-v1';
   var LS_UPDATE_KEY = 'dht-last-update-check';
   var $ = function (id) { return document.getElementById(id); };
@@ -685,7 +685,30 @@
     };
   }
   function getDay(s) { return store.days[s] || emptyDay(); }
+  // 匯入返嚟嘅日子可能唔齊四部份（卡 1 全變選填之後，status 可能成個冇晒，
+  // 或者 weight/protein/fat/sys/dia/hr 缺咗）；補返預設空值，
+  // 等 loadForm / 月曆 / 總覽讀唔到 undefined 出錯。原有數值一律唔郁。
+  function normalizeDay(d) {
+    if (!d || typeof d !== 'object') d = {};
+    var st = (d.status && typeof d.status === 'object') ? d.status : {};
+    var dz = (d.dizzy && typeof d.dizzy === 'object') ? d.dizzy : {};
+    var wf = (d.wife && typeof d.wife === 'object') ? d.wife : {};
+    var sn = (d.son && typeof d.son === 'object') ? d.son : {};
+    var str = function (v) { return v != null ? String(v) : ''; };
+    return {
+      status: {
+        weight: str(st.weight), protein: str(st.protein), fat: str(st.fat),
+        sys: str(st.sys), dia: str(st.dia), hr: str(st.hr), remark: str(st.remark)
+      },
+      dizzy: { has: !!dz.has, severity: dz.severity || '', remark: dz.remark || '' },
+      wife: { has: !!wf.has, shape: wf.shape || '', blood: !!wf.blood, remark: wf.remark || '' },
+      son: { has: !!sn.has, shape: sn.shape || '', blood: !!sn.blood, remark: sn.remark || '' },
+      confirmed: !!d.confirmed
+    };
+  }
   var store = loadStore();
+  // 已經存落 localStorage 嘅舊日子都一樣規格化（例如舊匯入缺咗 status）
+  Object.keys(store.days).forEach(function (k) { store.days[k] = normalizeDay(store.days[k]); });
 
   // ---------- 體重單位：kg → 磅（v1.0.4 一次性遷移）----------
   // 舊版只存過 kg，第一次載入 v1.0.4 時將已存體重 ×2.20462 轉做磅
@@ -732,9 +755,9 @@
   function statusFilled(st) {
     return !!(st.weight || st.protein || st.fat || st.sys || st.dia || st.hr);
   }
+  // 卡 1 全變選填（v1.0.6）：banner 只計頭暈、太太便便、兒子便便 3 項
   function cardsReady(rec) {
     var n = 0;
-    if (statusFilled(rec.status)) n++;
     if (rec.dizzy.has) n++;
     if (rec.wife.has) n++;
     if (rec.son.has) n++;
@@ -781,22 +804,21 @@
   function renderBanner(rec) {
     if (!rec) rec = getDay(ds(selDate));
     var n = cardsReady(rec);
-    var done = n >= 4;
+    var done = n >= 3;
     var missing = [];
-    if (!statusFilled(rec.status)) missing.push('太太當日狀態');
     if (!rec.dizzy.has) missing.push('頭暈');
     if (!rec.wife.has) missing.push('太太便便');
     if (!rec.son.has) missing.push('兒子便便');
     var z = $('banner-zone');
     if (!z) return;
     if (done) {
-      z.innerHTML = '<div class="banner done">' + SVG_CHECK + '<div style="flex:1"><div class="bt">今日已填齊（4 / 4）</div>' +
+      z.innerHTML = '<div class="banner done">' + SVG_CHECK + '<div style="flex:1"><div class="bt">今日已填齊（3 / 3）</div>' +
         '<div class="bs">撳下面「確認記錄」之後，改咗嘢要再確認一次。</div>' +
         '<div class="progress"><i style="width:100%"></i></div></div></div>';
     } else {
-      z.innerHTML = '<div class="banner todo">' + SVG_CLOCK + '<div style="flex:1"><div class="bt">今日未填齊（' + n + ' / 4）</div>' +
+      z.innerHTML = '<div class="banner todo">' + SVG_CLOCK + '<div style="flex:1"><div class="bt">今日未填齊（' + n + ' / 3）</div>' +
         '<div class="bs">仲差：' + esc(missing.join('、')) + '</div>' +
-        '<div class="progress"><i style="width:' + (n * 25) + '%"></i></div></div></div>';
+        '<div class="progress"><i style="width:' + Math.round(n * 100 / 3) + '%"></i></div></div></div>';
     }
     var dot = $('tab-dot');
     if (dot) dot.classList.toggle('show', !done && sameDay(selDate, today()));
@@ -871,7 +893,8 @@
     };
     var pill = document.querySelector('[data-pill="status"]');
     if (pill) {
-      pill.textContent = statusFilled(st) ? '已填' : '未填';
+      // 卡 1 全變選填（v1.0.6）：空嘅時候顯示「選填」，唔係「未填」
+      pill.textContent = statusFilled(st) ? '已填' : '選填';
       pill.className = 'pill ' + (statusFilled(st) ? 'filled' : 'empty');
     }
     var d = collectForm();
@@ -1333,6 +1356,7 @@
         ioMsg('已取消匯入，記錄冇變。', true);
         return;
       }
+      Object.keys(data.days).forEach(function (k) { data.days[k] = normalizeDay(data.days[k]); });
       store = data;
       saveStore();
       loadForm();
