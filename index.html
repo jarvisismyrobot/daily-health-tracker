@@ -328,6 +328,18 @@
   .sev-row .bar i { display: block; height: 100%; background: var(--amber); border-radius: 99px; }
   .sev-row .sn { width: 3.2em; text-align: right; color: var(--muted); font-weight: 700; flex: 0 0 auto; }
 
+  /* ---------- 備份：匯出 / 匯入 ---------- */
+  .io-note { margin: 0 0 12px; font-size: 14px; color: var(--muted); line-height: 1.6; }
+  .io-row { display: flex; gap: 10px; }
+  .io-btn { flex: 1; padding: 12px 8px; border-radius: 12px; font-weight: 700; font-size: 15.5px; cursor: pointer; font-family: inherit; }
+  .io-btn.primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
+  @media (prefers-color-scheme: dark) { .io-btn.primary { color: #0c1512; } }
+  .io-btn.ghost { background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); }
+  .io-msg { display: none; margin-top: 10px; font-size: 14px; font-weight: 700; border-radius: 10px; padding: 8px 12px; }
+  .io-msg.show { display: block; }
+  .io-msg.err { background: var(--amber-soft); color: var(--ink); }
+  .io-msg.ok { background: var(--accent-soft); color: var(--accent-ink); }
+
   .view { display: none; }
   .view.active { display: block; }
   .view-title { font-size: 20px; font-weight: 900; margin: 0 0 10px; }
@@ -516,7 +528,7 @@
       <div class="submit-msg" id="submit-msg"></div>
     </div>
     <div class="foot-note">只作記錄之用 · 可補填今日及前 3 日</div>
-    <div class="ver-line">v1.0.2 · <button type="button" id="upd-btn">檢查更新</button></div>
+    <div class="ver-line">v1.0.3 · <button type="button" id="upd-btn">檢查更新</button></div>
     <div class="upd-note" id="upd-note"></div>
 
     <datalist id="dl-weight"></datalist>
@@ -587,6 +599,16 @@
       </div>
     </div>
     <div class="foot-note">數字同圖表只係將記錄列返出嚟，唔作任何判斷</div>
+    <div class="card">
+      <div class="card-head"><h2>備份記錄</h2></div>
+      <p class="io-note">匯出會將全部記錄存成一個檔案，留喺你自己部電話；匯入可以將之前匯出嘅檔案放返入嚟。匯入之前會問你確認，舊記錄會被新檔案取代。</p>
+      <div class="io-row">
+        <button type="button" class="io-btn primary" id="export-btn">⬇ 匯出備份</button>
+        <button type="button" class="io-btn ghost" id="import-btn">⬆ 匯入備份</button>
+      </div>
+      <input type="file" id="import-file" accept=".json,application/json" hidden>
+      <div class="io-msg" id="io-msg"></div>
+    </div>
   </section>
 </div>
 
@@ -608,7 +630,7 @@
 <script>
 (function () {
   'use strict';
-  var APP_VERSION = '1.0.2';
+  var APP_VERSION = '1.0.3';
   var LS_KEY = 'dht-v1';
   var LS_UPDATE_KEY = 'dht-last-update-check';
   var $ = function (id) { return document.getElementById(id); };
@@ -1104,7 +1126,6 @@
       '<div class="ms-group"><div class="ms-title"><span class="person-mark son">兒子</span>兒子</div>' +
       '<div class="month-summary">' +
       '<div class="stat"><div class="n">' + s.bowel + ' <small>日</small></div><div class="l">兒子有便便</div>' + bloodSub(s.blood) + '</div>' +
-      '<div class="stat"><div class="n">' + s.blood + ' <small>日</small></div><div class="l">有血日數</div></div>' +
       '</div></div>';
   }
 
@@ -1222,6 +1243,77 @@
       .catch(function () { if (showResult) show('暫時檢查唔到更新（離線或網絡問題）。'); });
   }
   $('upd-btn').addEventListener('click', function () { checkUpdate(true); });
+
+  // ---------- 備份：匯出 / 匯入 ----------
+  function ioMsg(text, ok) {
+    var m = $('io-msg');
+    m.textContent = text;
+    m.className = 'io-msg show ' + (ok ? 'ok' : 'err');
+  }
+  function countDays(days) { return Object.keys(days || {}).length; }
+  function exportData() {
+    try {
+      var payload = { app: 'daily-health-tracker', version: APP_VERSION, exportedAt: new Date().toISOString(), data: store };
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      // 英文檔名：試過中文檔名，瀏覽器會將 blob 下載存做冇副檔名嘅「download」，匯入時唔方便
+      a.download = 'daily-health-tracker-' + ds(today()) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+      ioMsg('已匯出 ' + countDays(store.days) + ' 日記錄。', true);
+    } catch (e) { ioMsg('匯出失敗，請再試一次。', false); }
+  }
+  // 檢查匯入檔案係咪呢個 app 嘅備份；唔啱就唔郁現有資料
+  function validImport(obj) {
+    if (!obj || typeof obj !== 'object') return null;
+    if (obj.app && obj.app !== 'daily-health-tracker') return null;
+    var data = obj.data ? obj.data : obj;
+    if (!data || typeof data !== 'object' || !data.days || typeof data.days !== 'object' || Array.isArray(data.days)) return null;
+    var keys = Object.keys(data.days);
+    for (var i = 0; i < keys.length; i++) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(keys[i])) return null;
+      var d = data.days[keys[i]];
+      if (!d || typeof d !== 'object') return null;
+      var parts = ['status', 'dizzy', 'wife', 'son'];
+      for (var j = 0; j < parts.length; j++) {
+        if (d[parts[j]] != null && typeof d[parts[j]] !== 'object') return null;
+      }
+    }
+    return { days: data.days };
+  }
+  function importData(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var parsed;
+      try { parsed = JSON.parse(reader.result); } catch (e) { parsed = null; }
+      var data = validImport(parsed);
+      if (!data) { ioMsg('呢個唔係有效嘅備份檔案，冇匯入到任何資料。', false); return; }
+      var n = countDays(data.days);
+      if (!window.confirm('匯入會用檔案入面嘅 ' + n + ' 日記錄，取代而家全部記錄。確定要繼續嗎？')) {
+        ioMsg('已取消匯入，記錄冇變。', true);
+        return;
+      }
+      store = data;
+      saveStore();
+      loadForm();
+      renderAlerts();
+      renderCal();
+      renderDash();
+      ioMsg('已匯入 ' + n + ' 日記錄。', true);
+    };
+    reader.onerror = function () { ioMsg('讀唔到呢個檔案，請再試一次。', false); };
+    reader.readAsText(file);
+  }
+  $('export-btn').addEventListener('click', exportData);
+  $('import-btn').addEventListener('click', function () { $('import-file').click(); });
+  $('import-file').addEventListener('change', function () {
+    var f = this.files && this.files[0];
+    this.value = '';
+    if (f) importData(f);
+  });
 
   // ---------- init ----------
   buildDatalists();
