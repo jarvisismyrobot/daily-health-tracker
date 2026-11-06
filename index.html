@@ -405,7 +405,7 @@
       <div class="inherit-note" id="inherit-note">已自動填入昨日嘅數值，冇變就唔使理，有變先改返。</div>
       <div class="grid3">
         <div class="field"><label for="f-weight">體重</label>
-          <div class="unit-wrap"><input id="f-weight" size="1" list="dl-weight" inputmode="decimal" autocomplete="off" placeholder="—"><span class="unit">kg</span><span class="dd">▾</span></div>
+          <div class="unit-wrap"><input id="f-weight" size="1" list="dl-weight" inputmode="decimal" autocomplete="off" placeholder="—"><span class="unit">磅</span><span class="dd">▾</span></div>
         </div>
         <div class="field"><label for="f-protein">Protein</label>
           <div class="unit-wrap"><input id="f-protein" size="1" list="dl-protein" inputmode="decimal" autocomplete="off" placeholder="—"><span class="unit">%</span><span class="dd">▾</span></div>
@@ -528,7 +528,7 @@
       <div class="submit-msg" id="submit-msg"></div>
     </div>
     <div class="foot-note">只作記錄之用 · 可補填今日及前 3 日</div>
-    <div class="ver-line">v1.0.3 · <button type="button" id="upd-btn">檢查更新</button></div>
+    <div class="ver-line">v1.0.4 · <button type="button" id="upd-btn">檢查更新</button></div>
     <div class="upd-note" id="upd-note"></div>
 
     <datalist id="dl-weight"></datalist>
@@ -586,7 +586,7 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><h2>體重走勢</h2><span class="pill filled" id="weight-range-label">過去 7 日</span></div>
+        <div class="card-head"><h2>體重走勢（磅）</h2><span class="pill filled" id="weight-range-label">過去 7 日</span></div>
         <div class="chart-wrap" id="weight-chart"></div>
       </div>
       <div class="card">
@@ -630,7 +630,7 @@
 <script>
 (function () {
   'use strict';
-  var APP_VERSION = '1.0.3';
+  var APP_VERSION = '1.0.4';
   var LS_KEY = 'dht-v1';
   var LS_UPDATE_KEY = 'dht-last-update-check';
   var $ = function (id) { return document.getElementById(id); };
@@ -640,7 +640,7 @@
   var SEV_LABELS = ['輕', '中', '重'];
   var SHAPE_LABELS = ['香蕉', '石頭', '爛', '其他'];
   var RANGES = {
-    weight: { min: 40, max: 90, step: 0.5, digits: 1 },
+    weight: { min: 80, max: 300, step: 0.5, digits: 1 },
     protein: { min: 5, max: 30, step: 1, digits: 0 },
     fat: { min: 10, max: 50, step: 1, digits: 0 },
     sys: { min: 90, max: 180, step: 5, digits: 0 },
@@ -686,6 +686,32 @@
   }
   function getDay(s) { return store.days[s] || emptyDay(); }
   var store = loadStore();
+
+  // ---------- 體重單位：kg → 磅（v1.0.4 一次性遷移）----------
+  // 舊版只存過 kg，第一次載入 v1.0.4 時將已存體重 ×2.20462 轉做磅
+  // （取 1 個小數位），然後寫入旗標，之後再載入都唔會重複轉。
+  // pull-down 嘅舊數值係由 store.days 拎出嚟，所以一併轉埋。
+  var LS_WEIGHT_UNIT_KEY = 'dht-weight-unit';
+  function kgToLb(v) {
+    var n = parseFloat(v);
+    if (isNaN(n)) return v;
+    return (Math.round(n * 2.20462 * 10) / 10).toFixed(1);
+  }
+  (function migrateWeightUnit() {
+    try {
+      if (localStorage.getItem(LS_WEIGHT_UNIT_KEY) === 'lb') return;
+      var changed = false;
+      Object.keys(store.days).forEach(function (k) {
+        var day = store.days[k];
+        if (day && day.status && day.status.weight !== '' && day.status.weight != null) {
+          var conv = kgToLb(day.status.weight);
+          if (conv !== String(day.status.weight)) { day.status.weight = conv; changed = true; }
+        }
+      });
+      if (changed) saveStore();
+      localStorage.setItem(LS_WEIGHT_UNIT_KEY, 'lb');
+    } catch (e) { /* 遷移失敗都唔阻開 app */ }
+  })();
 
   // ---------- state ----------
   var selDate = today();
@@ -986,7 +1012,7 @@
     if (!rec || !rec[who] || !rec[who].has) return '';
     var cls = who === 'wife' ? 'wife' : 'son';
     var pre = who === 'wife' ? '太' : '兒';
-    if (rec[who].blood) return '<span class="person-mark ' + cls + '">' + pre + '便血🩸</span>';
+    if (rec[who].blood) return '<span class="person-mark ' + cls + '">' + pre + '💩🩸</span>';
     return '<span class="person-mark ' + cls + '">' + pre + '💩</span>';
   }
   function renderCal() {
@@ -1019,7 +1045,8 @@
       '<span><span class="dot" style="background:var(--amber)"></span>💫 太太有頭暈</span>' +
       '<span><span class="person-mark wife">太💩</span> 太太有便便</span>' +
       '<span><span class="person-mark son">兒💩</span> 兒子有便便</span>' +
-      '<span><span class="person-mark wife">太便血🩸</span> 太便血（有血係便便嘅其中一個屬性，同一個標記）</span>';
+      '<span><span class="person-mark wife">太💩🩸</span> 太太有便便兼有血</span>' +
+      '<span><span class="person-mark son">兒💩🩸</span> 兒子有便便兼有血（有血係便便嘅其中一個屬性，同一個標記）</span>';
     renderDayDetail();
     renderMonthSummary();
   }
@@ -1058,7 +1085,7 @@
     } else {
       var st = rec.status;
       var statusTxt = [];
-      if (st.weight) statusTxt.push('體重 ' + esc(st.weight) + ' kg');
+      if (st.weight) statusTxt.push('體重 ' + esc(st.weight) + ' 磅');
       if (st.protein) statusTxt.push('Protein ' + esc(st.protein) + '%');
       if (st.fat) statusTxt.push('Fat ' + esc(st.fat) + '%');
       if (st.sys && st.dia) statusTxt.push('血壓 ' + esc(st.sys) + '/' + esc(st.dia));
@@ -1120,7 +1147,7 @@
       '<div class="month-summary">' +
       '<div class="stat"><div class="n">' + w.diz + ' <small>日</small></div><div class="l">頭暈日數</div></div>' +
       '<div class="stat"><div class="n">' + w.bowel + ' <small>日</small></div><div class="l">太太有便便</div>' + bloodSub(w.blood) + '</div>' +
-      '<div class="stat"><div class="n">' + (w.avgW != null ? w.avgW.toFixed(1) + ' <small>kg</small>' : '—') + '</div><div class="l">平均體重</div></div>' +
+      '<div class="stat"><div class="n">' + (w.avgW != null ? w.avgW.toFixed(1) + ' <small>磅</small>' : '—') + '</div><div class="l">平均體重</div></div>' +
       '<div class="stat"><div class="n">' + (w.avgBp || '—') + '</div><div class="l">平均血壓</div></div>' +
       '</div></div>' +
       '<div class="ms-group"><div class="ms-title"><span class="person-mark son">兒子</span>兒子</div>' +
@@ -1280,6 +1307,12 @@
       var parts = ['status', 'dizzy', 'wife', 'son'];
       for (var j = 0; j < parts.length; j++) {
         if (d[parts[j]] != null && typeof d[parts[j]] !== 'object') return null;
+      }
+      // 體重而家用磅：接受 80–300 磅；舊 kg 數值（例如 58.4）會被拒，
+      // 唔會靜靜雞當做磅匯入
+      if (d.status && d.status.weight !== '' && d.status.weight != null) {
+        var w = parseFloat(d.status.weight);
+        if (isNaN(w) || w < 80 || w > 300) return null;
       }
     }
     return { days: data.days };
