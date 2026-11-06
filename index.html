@@ -5,701 +5,1239 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>每日健康記錄</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#0e7569">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="健康記錄">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang HK","Microsoft JhengHei",sans-serif;background:#f6f4ef;color:#2b2b2b;min-height:100vh}
-  #app{max-width:520px;margin:0 auto;min-height:100vh;background:#f6f4ef;display:flex;flex-direction:column}
-  header{background:#0f766e;color:#fff;padding:14px 16px 12px}
-  header .top{display:flex;justify-content:space-between;align-items:baseline}
-  header h1{font-size:20px;letter-spacing:1px}
-  header .ver{font-size:11px;opacity:.85;white-space:nowrap}
-  header p{font-size:12px;opacity:.85;margin-top:3px}
-  .upd-btn{margin-top:8px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;font-family:inherit}
-  .upd-btn:active{background:rgba(255,255,255,.3)}
-  .upd-note{font-size:12px;margin-top:6px;color:#fef3c7;display:none}
-  main{flex:1;padding:12px 12px 84px}
-  .page{display:none}
-  .page.active{display:block}
-  .banner{border-radius:12px;padding:11px 13px;font-size:14px;line-height:1.5;margin-bottom:10px}
-  .banner.warn{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
-  .banner.ok{background:#dcfce7;color:#166534;border:1px solid #86efac}
-  .banner.alert{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-weight:700}
-  .banner .sub{font-weight:400;font-size:12px;opacity:.85}
-  .card{background:#fff;border:1px solid #e5e0d5;border-radius:14px;padding:12px;margin-bottom:10px}
-  .card-head{display:flex;align-items:center;gap:8px;min-height:28px}
-  .card-head .num{font-size:14px;color:#6b7280;width:16px;flex:0 0 16px}
-  .card-head .ic{font-size:17px;width:24px;flex:0 0 24px;text-align:center}
-  .card-head .ttl{font-size:16px;font-weight:700;flex:1}
-  .card-head .state{font-size:13px;font-weight:700;color:#6b7280;background:#f3f4f6;border-radius:999px;padding:3px 9px;white-space:nowrap}
-  .card-head .state.yes{color:#166534;background:#dcfce7}
-  input[type=checkbox].big{width:24px;height:24px;flex:0 0 24px;accent-color:#0f766e;cursor:pointer}
-  .body{margin-top:10px}
-  .field{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:8px;margin-bottom:8px}
-  .field label{font-size:14px;color:#374151}
-  .field input,.field select{width:100%;padding:9px 10px;font-size:15px;border:1.5px solid #d8d2c4;border-radius:9px;background:#fff;font-family:inherit;color:#111}
-  .field input:focus{outline:2px solid #0f766e;outline-offset:0;border-color:#0f766e}
-  .field .unit{font-size:12px;color:#6b7280}
-  .hint{font-size:12px;color:#6b7280;line-height:1.5}
-  .hint.green{color:#15803d}
-  .pill-row{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px}
-  .pill{padding:8px 12px;border:1.5px solid #d8d2c4;border-radius:999px;background:#fff;font-size:14px;cursor:pointer;font-family:inherit;color:#111}
-  .pill .pi{font-size:14px}
-  .pill.sel{background:#0f766e;color:#fff;border-color:#0f766e}
-  .pill-row-label{font-size:13px;color:#374151;margin-top:8px}
-  .pill-row-label b{font-weight:700}
-  .blood-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px}
-  .blood-row .ic{font-size:16px;width:22px;text-align:center}
-  .add-note{background:none;border:none;color:#0f766e;font-size:13px;cursor:pointer;padding:6px 0 0;font-family:inherit;text-decoration:underline}
-  .note-wrap{display:none;margin-top:8px}
-  .note-wrap.open{display:block}
-  .note-wrap textarea{width:100%;min-height:56px;padding:9px 10px;font-size:14px;border:1.5px solid #d8d2c4;border-radius:9px;font-family:inherit;resize:vertical}
-  .note-wrap label{font-size:13px;color:#374151;display:block;margin-bottom:4px}
-  .datebar{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e5e0d5;border-radius:12px;padding:8px 10px;margin-bottom:10px}
-  .datebar button{background:#f3f4f6;border:1px solid #d8d2c4;border-radius:8px;padding:7px 12px;font-size:14px;cursor:pointer;font-family:inherit}
-  .datebar .d{font-size:15px;font-weight:700;text-align:center}
-  .datebar .d small{display:block;font-size:11px;color:#6b7280;font-weight:400}
-  .confirm-wrap{position:sticky;bottom:66px;z-index:5;margin-top:4px}
-  .confirm-btn{width:100%;padding:15px;background:#0f766e;color:#fff;border:none;border-radius:14px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 10px rgba(15,118,110,.35)}
-  .confirm-btn.done{background:#15803d}
-  .missing{display:none;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.7;margin-top:8px}
-  .missing.show{display:block}
-  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-  .chip{padding:7px 13px;border:1.5px solid #d8d2c4;border-radius:999px;background:#fff;font-size:14px;cursor:pointer;font-family:inherit}
-  .chip.sel{background:#0f766e;color:#fff;border-color:#0f766e}
-  .cal-head{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:#6b7280;margin:6px 0 4px}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-  .cal-day{background:#fff;border:1px solid #e5e0d5;border-radius:9px;min-height:56px;padding:4px 3px;cursor:pointer;text-align:center}
-  .cal-day.other{opacity:.35}
-  .cal-day.today{border-color:#0f766e;border-width:2px}
-  .cal-day.sel{background:#e6f4f2;border-color:#0f766e}
-  .cal-day .dn{font-size:13px;font-weight:700}
-  .cal-day .mk{display:block;font-size:9px;line-height:1.5;margin-top:2px;word-break:break-all}
-  .cal-day .mk .m-wife{color:#15803d}
-  .cal-day .mk .m-son{color:#1d4ed8}
-  .cal-day .mk .m-diz{color:#b45309}
-  .legend{font-size:12px;color:#6b7280;line-height:1.9;margin:8px 2px}
-  .legend b{color:#374151}
-  .detail{background:#fff;border:1px solid #e5e0d5;border-radius:14px;padding:12px;margin-top:10px;font-size:14px;line-height:1.9}
-  .detail h3{font-size:15px;margin-bottom:4px}
-  .detail .row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #eee;padding:5px 0}
-  .detail .row:last-child{border-bottom:none}
-  .detail .k{color:#6b7280}
-  .summary{background:#fff;border:1px solid #e5e0d5;border-radius:14px;padding:12px;margin-top:10px}
-  .summary h3{font-size:15px;margin-bottom:6px}
-  .summary h4{font-size:14px;margin:10px 0 4px;color:#0f766e}
-  .summary h4.son{color:#1d4ed8}
-  .summary p{font-size:13.5px;line-height:1.9}
-  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-  .stat{background:#fff;border:1px solid #e5e0d5;border-radius:12px;padding:11px 12px}
-  .stat .v{font-size:21px;font-weight:700}
-  .stat .l{font-size:12px;color:#6b7280;margin-top:2px;line-height:1.5}
-  .chart-card{background:#fff;border:1px solid #e5e0d5;border-radius:14px;padding:12px;margin-bottom:10px}
-  .chart-card h3{font-size:15px;margin-bottom:2px}
-  .chart-card .sub{font-size:12px;color:#6b7280;margin-bottom:6px}
-  .chart-card svg{width:100%;height:auto;display:block}
-  .bar-row{display:grid;grid-template-columns:52px 1fr 34px;align-items:center;gap:8px;font-size:13px;margin:7px 0}
-  .bar-track{background:#f3f4f6;border-radius:999px;height:12px;overflow:hidden}
-  .bar-fill{height:100%;background:#0f766e;border-radius:999px}
-  .empty{text-align:center;color:#9ca3af;font-size:13px;line-height:1.9;padding:18px 8px}
-  nav.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:#fff;border-top:1px solid #e5e0d5;display:flex;z-index:10;padding-bottom:env(safe-area-inset-bottom)}
-  nav.tabs button{flex:1;background:none;border:none;padding:9px 4px 10px;font-size:12px;color:#6b7280;cursor:pointer;font-family:inherit}
-  nav.tabs button .ti{font-size:19px;display:block}
-  nav.tabs button.active{color:#0f766e;font-weight:700}
-  footer{font-size:11px;color:#9ca3af;text-align:center;padding:14px 0 4px;line-height:1.7}
+  :root {
+    --bg: #eef2ee;
+    --surface: #ffffff;
+    --surface-2: #f4f7f4;
+    --ink: #1d2a24;
+    --muted: #61736a;
+    --faint: #8ba096;
+    --line: #dce4dd;
+    --accent: #0e7569;
+    --accent-soft: #e0f0ec;
+    --accent-ink: #0a5a51;
+    --amber: #b45309;
+    --amber-soft: #faf0dd;
+    --red: #b3352b;
+    --red-soft: #fae9e7;
+    --blue: #2f5d8a;
+    --blue-soft: #e6eef6;
+    --shadow: 0 1px 2px rgba(23, 43, 35, .06), 0 8px 24px -18px rgba(23, 43, 35, .35);
+    --radius: 18px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101613;
+      --surface: #1a211d;
+      --surface-2: #212a25;
+      --ink: #e7eee9;
+      --muted: #a3b5aa;
+      --faint: #71857a;
+      --line: #2c3831;
+      --accent: #3ec2b0;
+      --accent-soft: #173832;
+      --accent-ink: #8fe0d2;
+      --amber: #e8a04c;
+      --amber-soft: #3a2c16;
+      --red: #ef8a80;
+      --red-soft: #3d201d;
+      --blue: #8db6dd;
+      --blue-soft: #1d2c3d;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 26px -18px rgba(0,0,0,.8);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Noto Sans TC", "PingFang HK", "Microsoft JhengHei", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  button { font: inherit; color: inherit; }
+  input, textarea { font: inherit; color: var(--ink); }
+
+  .app { max-width: 600px; margin: 0 auto; padding: 8px 12px 104px; }
+  @media (min-width: 900px) { .app { max-width: 880px; padding-top: 20px; } }
+
+  /* ---------- date bar ---------- */
+  .datebar {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin-bottom: 6px;
+  }
+  .datebar .navbtn {
+    width: 38px; height: 38px; flex: 0 0 auto;
+    border: 1px solid var(--line); background: var(--surface);
+    border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+  }
+  .datebar .navbtn:disabled { opacity: .35; cursor: default; }
+  .datebar .navbtn svg { width: 20px; height: 20px; }
+  .date-title { text-align: center; flex: 1 1 auto; min-width: 0; }
+  .date-title .dow { font-size: 13px; color: var(--accent); font-weight: 700; letter-spacing: .08em; }
+  .date-title h1 { margin: 0; font-size: 21px; font-weight: 900; letter-spacing: .01em; }
+  .date-title .sub { font-size: 13px; color: var(--muted); }
+  .today-jump {
+    display: none; margin: 10px auto 0; padding: 5px 14px;
+    border: 1px solid var(--accent); color: var(--accent-ink); background: var(--accent-soft);
+    border-radius: 999px; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .today-jump.show { display: block; }
+
+  /* ---------- banners ---------- */
+  .banner {
+    border-radius: var(--radius); padding: 9px 13px; margin-bottom: 8px;
+    display: flex; gap: 10px; align-items: flex-start; box-shadow: var(--shadow);
+  }
+  .banner svg { width: 22px; height: 22px; flex: 0 0 auto; margin-top: 2px; }
+  .banner .bt { font-weight: 700; }
+  .banner .bs { font-size: 14px; color: var(--muted); }
+  .banner.todo { background: var(--surface); border: 1px solid var(--line); }
+  .banner.todo svg { color: var(--amber); }
+  .banner.done { background: var(--accent-soft); border: 1px solid transparent; }
+  .banner.done svg { color: var(--accent); }
+  .banner.done .bs { color: var(--accent-ink); }
+  .banner.alert { background: var(--red-soft); border: 1px solid transparent; }
+  .banner.alert svg { color: var(--red); }
+  .banner.alert .bs { color: var(--ink); opacity: .75; }
+  .progress { height: 6px; background: var(--surface-2); border-radius: 99px; margin-top: 10px; overflow: hidden; }
+  .banner.todo .progress, .banner.done .progress { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+  .progress i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s ease; }
+
+  /* ---------- cards ---------- */
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 11px 14px; margin-bottom: 8px; box-shadow: var(--shadow);
+  }
+  .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+  .card-head h2 { margin: 0; font-size: 16.5px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+  .card-head h2 .num {
+    width: 26px; height: 26px; border-radius: 9px; background: var(--accent-soft); color: var(--accent-ink);
+    display: inline-grid; place-items: center; font-size: 14px; font-weight: 900; flex: 0 0 auto;
+  }
+  .pill { font-size: 12.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  .pill.empty { background: var(--surface-2); color: var(--faint); border: 1px solid var(--line); }
+  .pill.filled { background: var(--accent-soft); color: var(--accent-ink); }
+
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  @media (max-width: 380px) { .grid3 { grid-template-columns: repeat(3, 1fr); gap: 7px; } }
+  .field { min-width: 0; }
+  .field label { display: flex; align-items: flex-end; min-height: 20px; line-height: 1.3; text-align: left; font-size: 12.5px; font-weight: 700; color: var(--muted); margin-bottom: 3px; }
+  .field .unit-wrap { position: relative; display: flex; align-items: center; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+  .field .unit-wrap:focus-within { border-color: var(--accent); background: var(--surface); }
+  .field input {
+    padding: 8px 4px 8px 8px; border: none; border-radius: 10px;
+    background: transparent; font-size: 16px; font-weight: 700; outline: none; min-width: 0; flex: 1 1 0;
+  }
+  .field input::-webkit-calendar-picker-indicator { display: none !important; }
+  .field .unit { position: static; transform: none; font-size: 11.5px; color: var(--faint); font-weight: 700; pointer-events: none; white-space: nowrap; flex: 0 0 auto; margin-right: 2px; }
+  .field .dd { position: static; transform: none; font-size: 9px; color: var(--faint); pointer-events: none; flex: 0 0 auto; margin-right: 6px; }
+  .bp-row { display: grid; grid-template-columns: 1fr auto 1fr 1fr; gap: 6px; align-items: end; margin-top: 6px; }
+  .bp-row .slash { font-size: 18px; color: var(--faint); padding-bottom: 8px; font-weight: 700; }
+  .remark { margin-top: 7px; }
+  .remark textarea {
+    width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2);
+    padding: 7px 10px; font-size: 14.5px; resize: vertical; min-height: 34px; outline: none;
+  }
+  .remark textarea:focus { border-color: var(--accent); background: var(--surface); }
+  .remark label { display: flex; align-items: flex-end; min-height: 20px; line-height: 1.3; text-align: left; font-size: 12.5px; font-weight: 700; color: var(--muted); margin-bottom: 3px; }
+  .inherit-note {
+    display: none; font-size: 13px; font-weight: 700; color: var(--accent-ink);
+    background: var(--accent-soft); border-radius: 10px; padding: 7px 11px; margin-bottom: 9px;
+  }
+  .inherit-note.show { display: block; }
+  .remark label span { color: var(--faint); font-weight: 400; }
+
+  /* 有 / 無：得一個 checkbox — 剔咗 = 有，唔剔 = 無 */
+  .check-row {
+    display: flex; align-items: center; gap: 11px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface-2); border-radius: 12px;
+    padding: 10px 12px; user-select: none; -webkit-user-select: none;
+  }
+  .check-row input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none; margin: 0; flex: 0 0 auto;
+    width: 26px; height: 26px; border: 2px solid var(--faint); border-radius: 8px;
+    background: var(--surface); display: grid; place-items: center; cursor: pointer; outline: none;
+  }
+  .check-row input[type="checkbox"]::after {
+    content: "✓"; font-size: 17px; font-weight: 900; line-height: 1; color: #fff;
+    transform: scale(0); transition: transform .12s ease;
+  }
+  .check-row input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+  .check-row input[type="checkbox"]:checked::after { transform: scale(1); }
+  .check-row input[type="checkbox"]:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); }
+  .check-row .check-text { flex: 1 1 auto; min-width: 0; }
+  .check-row .check-text strong { display: block; font-size: 16px; font-weight: 900; line-height: 1.25; }
+  .check-row .check-text small { display: block; font-size: 12.5px; color: var(--muted); font-weight: 400; }
+  .check-row .check-state {
+    flex: 0 0 auto; font-size: 13px; font-weight: 900; padding: 3px 11px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--line); color: var(--muted);
+  }
+  .check-row.on { background: var(--accent-soft); border-color: var(--accent); }
+  .check-row.on .check-state { background: var(--accent); border-color: var(--accent); color: #fff; }
+  @media (prefers-color-scheme: dark) { .check-row.on .check-state { color: #0c1512; } }
+  .check-row.warn.on { background: var(--amber-soft); border-color: var(--amber); }
+  .check-row.warn input[type="checkbox"]:checked { background: var(--amber); border-color: var(--amber); }
+  .check-row.warn.on .check-state { background: var(--amber); border-color: var(--amber); color: #fff; }
+  .check-row.blood-row.on { background: var(--red-soft); border-color: var(--red); }
+  .check-row.blood-row input[type="checkbox"] { width: 22px; height: 22px; border-radius: 7px; }
+  .check-row.blood-row input[type="checkbox"]::after { font-size: 14px; }
+  .check-row.blood-row input[type="checkbox"]:checked { background: var(--red); border-color: var(--red); }
+  .check-row.blood-row.on .check-state { background: var(--red); border-color: var(--red); color: #fff; }
+  .check-row.blood-row .check-text strong { font-size: 15px; }
+  /* 今日卡：標題 + checkbox 合併做同一行（卡 2–4 專用） */
+  .check-row.main-row { padding: 9px 12px; }
+  .check-row.main-row .num {
+    width: 26px; height: 26px; border-radius: 9px; background: var(--accent-soft); color: var(--accent-ink);
+    display: inline-grid; place-items: center; font-size: 14px; font-weight: 900; flex: 0 0 auto;
+  }
+  .check-row.warn.main-row .num { background: var(--amber-soft); color: var(--amber); }
+  .check-row.main-row .check-text strong { font-size: 17px; }
+  /* 主行次序：編號 + 標題在前，checkbox 跟喺標題後面，狀態 pill 推到最右 */
+  .check-row.main-row .check-text { flex: 0 1 auto; }
+  .check-row.main-row .check-state { margin-left: auto; }
+  /* Icon：全部用同一套 emoji、同一大小、同一擺位（標題／選項文字前面） */
+  .ico { font-size: 19px; line-height: 1; flex: 0 0 auto; }
+  .check-text .ico { font-size: 16px; }
+  .chips button .ico { font-size: 15px; }
+  .chips button .sev-ico { font-size: 11px; line-height: 1; }
+  /* 月曆篩選 + 分開 indicator */
+  .cal-filter { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .cal-filter .filter-label { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .person-mark {
+    font-size: 10px; font-weight: 800; line-height: 1.25; padding: 1px 4px; border-radius: 999px;
+    white-space: nowrap; display: inline-flex; align-items: center; gap: 1px;
+  }
+  .person-mark.wife { background: var(--accent-soft); color: var(--accent-ink); }
+  .person-mark.son { background: var(--blue-soft); color: var(--blue); }
+  .person-mark.none { opacity: .6; }
+  /* 總覽日數切換 */
+  .range-toggle { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+  .range-toggle button {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
+    padding: 7px 18px; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  }
+  .range-toggle button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  @media (prefers-color-scheme: dark) { .range-toggle button.on { color: #0c1512; } }
+
+  /* 程度 / 形狀：單選 pill，唔係 checkbox — 撳一個，其餘自動取消 */
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chips button {
+    border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px;
+    padding: 7px 16px; font-size: 14.5px; font-weight: 700; cursor: pointer; text-align: center;
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .chips button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  @media (prefers-color-scheme: dark) { .chips button.on { color: #0c1512; } }
+
+  /* 最底確認掣 */
+  .submit-zone { margin: 2px 0 10px; }
+  .submit-btn {
+    width: 100%; padding: 15px; border: none; border-radius: 14px; cursor: pointer;
+    background: var(--accent); color: #fff; font-size: 17px; font-weight: 900; letter-spacing: .02em;
+    box-shadow: var(--shadow);
+  }
+  @media (prefers-color-scheme: dark) { .submit-btn { color: #0c1512; } }
+  .submit-btn.confirmed { background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent); box-shadow: none; }
+  .submit-msg { display: none; margin-top: 9px; font-size: 14px; font-weight: 700; border-radius: 10px; padding: 8px 12px; }
+  .submit-msg.show { display: block; }
+  .submit-msg.err { background: var(--amber-soft); color: var(--ink); }
+  .submit-msg.ok { background: var(--accent-soft); color: var(--accent-ink); }
+  .sub-block { margin-top: 9px; display: none; }
+  .sub-block.show { display: block; }
+  .sub-blocks { display: grid; grid-template-columns: 1fr; gap: 0; }
+  @media (min-width: 480px) { .sub-blocks { grid-template-columns: 1.4fr 1fr; gap: 14px; } }
+  .sub-block .sub-label { font-size: 12.5px; font-weight: 700; color: var(--muted); margin-bottom: 5px; }
+
+  /* ---------- calendar ---------- */
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-head h2 { margin: 0; font-size: 20px; font-weight: 900; }
+  .cal-head .navbtn {
+    width: 38px; height: 38px; border: 1px solid var(--line); background: var(--surface);
+    border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+  }
+  .cal-head .navbtn svg { width: 18px; height: 18px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .cal-grid .dow { text-align: center; font-size: 12.5px; font-weight: 700; color: var(--faint); padding: 4px 0; }
+  .day {
+    min-height: 64px; border: 1px solid transparent; border-radius: 12px; background: var(--surface-2);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    cursor: pointer; padding: 3px 1px; position: relative;
+  }
+  .day .dn { font-size: 14.5px; font-weight: 700; line-height: 1; }
+  .day.blank { background: transparent; cursor: default; }
+  .day.future { opacity: .35; cursor: default; }
+  .day.today { border-color: var(--accent); }
+  .day.sel { background: var(--accent-soft); border-color: var(--accent); }
+  .marks { display: flex; flex-wrap: wrap; gap: 3px; min-height: 16px; align-items: center; justify-content: center; font-size: 11.5px; line-height: 1; }
+  .marks .none-mark { color: var(--faint); font-size: 10px; font-weight: 900; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 13px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .day-detail { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .day-detail h3 { margin: 0 0 10px; font-size: 16px; font-weight: 900; }
+  .dd-row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px dashed var(--line); font-size: 15px; }
+  .dd-row:last-of-type { border-bottom: none; }
+  .dd-row .k { color: var(--muted); font-weight: 700; flex: 0 0 auto; }
+  .dd-row .v { text-align: right; }
+  .dd-row .v .rm { display: block; color: var(--muted); font-size: 13.5px; }
+  .goto-btn {
+    margin-top: 12px; width: 100%; padding: 12px; border: none; border-radius: 12px;
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 15.5px; cursor: pointer;
+  }
+  @media (prefers-color-scheme: dark) { .goto-btn { color: #0c1512; } }
+  .readonly-note { margin-top: 12px; font-size: 13.5px; color: var(--faint); text-align: center; }
+
+  .month-summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
+  @media (min-width: 640px) { .month-summary { grid-template-columns: repeat(4, 1fr); } }
+  .stat { background: var(--surface-2); border-radius: 14px; padding: 12px 14px; }
+  .stat .n { font-size: 22px; font-weight: 900; line-height: 1.15; }
+  .stat .n small { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .stat .l { font-size: 13px; color: var(--muted); font-weight: 700; }
+  .stat .s { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  /* 本月小結：太太同兒子分開兩組 */
+  .ms-group + .ms-group { margin-top: 16px; }
+  .ms-title { font-size: 15px; font-weight: 900; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .ms-title .person-mark { font-size: 11px; padding: 2px 8px; }
+  #month-summary .month-summary { margin-top: 0; }
+
+  /* ---------- dashboard ---------- */
+  .dash-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 900px) { .dash-grid { grid-template-columns: 1fr 1fr; } .dash-grid .wide { grid-column: 1 / -1; } }
+  .week-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .chart-wrap { width: 100%; }
+  .chart-wrap svg { width: 100%; height: auto; display: block; }
+  .chart-empty { padding: 26px 10px; text-align: center; color: var(--faint); font-size: 14.5px; background: var(--surface-2); border-radius: 12px; }
+  .sev-rows { display: grid; gap: 8px; }
+  .sev-row { display: flex; align-items: center; gap: 10px; font-size: 14.5px; }
+  .sev-row .sl { width: 2em; font-weight: 700; flex: 0 0 auto; }
+  .sev-row .bar { flex: 1; height: 10px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+  .sev-row .bar i { display: block; height: 100%; background: var(--amber); border-radius: 99px; }
+  .sev-row .sn { width: 3.2em; text-align: right; color: var(--muted); font-weight: 700; flex: 0 0 auto; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+  .view-title { font-size: 20px; font-weight: 900; margin: 0 0 10px; }
+
+  /* ---------- bottom nav ---------- */
+  .tabbar {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; z-index: 20;
+    width: 100%; max-width: 600px;
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--line);
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    padding: 4px 10px calc(4px + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 900px) { .tabbar { max-width: 880px; } }
+  .tabbar button {
+    border: none; background: transparent; cursor: pointer; padding: 3px 0 1px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    font-size: 12.5px; font-weight: 700; color: var(--faint); border-radius: 12px;
+  }
+  .tabbar button svg { width: 20px; height: 20px; }
+  .tabbar button.on { color: var(--accent); }
+  .tabbar button .tdot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); display: none; }
+  .tabbar button .tdot.show { display: block; }
+
+  .foot-note { text-align: center; color: var(--faint); font-size: 13px; margin-top: 20px; }
+  .ver-line { text-align: center; color: var(--faint); font-size: 11.5px; margin-top: 6px; }
+  .ver-line button { background: none; border: none; color: var(--faint); font-size: 11.5px; cursor: pointer; text-decoration: underline; padding: 0; font-family: inherit; }
+  .upd-note { text-align: center; color: var(--faint); font-size: 11.5px; margin-top: 4px; display: none; }
+  .upd-note.show { display: block; }
+  .upd-note a { color: var(--accent); font-weight: 700; }
+  /* 捲到任何輸入控件嗰陣，預留底部導航欄嘅高度，唔好俾佢遮住 */
+  .app input, .app textarea, .app .card, .app .check-row, .app .chips button {
+    scroll-margin-bottom: 132px; scroll-margin-top: 14px;
+  }
 </style>
 </head>
+
 <body>
-<div id="app">
-  <header>
-    <div class="top"><h1>📋 每日健康記錄</h1><span class="ver">v1.0.1</span></div>
-    <p>只記低，唔評分 · 資料只存喺呢部裝置</p>
-    <button class="upd-btn" id="updBtn" type="button">檢查更新</button>
-    <div class="upd-note" id="updNote"></div>
-  </header>
-  <main>
-    <!-- ============ TODAY ============ -->
-    <section class="page active" id="page-today">
-      <div class="datebar">
-        <button type="button" id="prevDay">‹ 前一日</button>
-        <div class="d"><span id="dateLabel"></span><small id="dateSub"></small></div>
-        <button type="button" id="nextDay">後一日 ›</button>
-      </div>
-      <div id="alertBox"></div>
-      <div class="banner warn" id="remindBanner"></div>
+<div class="app">
 
-      <div class="card">
-        <div class="card-head"><span class="num">1.</span><span class="ic">⚖️</span><span class="ttl">太太當日狀態</span></div>
-        <div class="body">
-          <div class="hint green" id="defaultNote" style="display:none">已自動填入昨日數值，有變先至改。</div>
-          <div class="field"><label for="fWeight">體重</label><div style="display:flex;gap:6px;align-items:center"><input id="fWeight" inputmode="decimal" list="dlWeight" placeholder="例如 58.1" autocomplete="off"><span class="unit">kg</span></div></div>
-          <div class="field"><label for="fProtein">Protein</label><div style="display:flex;gap:6px;align-items:center"><input id="fProtein" inputmode="decimal" list="dlProtein" placeholder="%" autocomplete="off"><span class="unit">%</span></div></div>
-          <div class="field"><label for="fFat">Fat</label><div style="display:flex;gap:6px;align-items:center"><input id="fFat" inputmode="decimal" list="dlFat" placeholder="%" autocomplete="off"><span class="unit">%</span></div></div>
-          <div class="field"><label for="fSys">血壓上壓</label><div style="display:flex;gap:6px;align-items:center"><input id="fSys" inputmode="numeric" list="dlSys" placeholder="例如 121" autocomplete="off"><span class="unit">mmHg</span></div></div>
-          <div class="field"><label for="fDia">血壓下壓</label><div style="display:flex;gap:6px;align-items:center"><input id="fDia" inputmode="numeric" list="dlDia" placeholder="例如 79" autocomplete="off"><span class="unit">mmHg</span></div></div>
-          <div class="field"><label for="fHr">心跳（選填）</label><div style="display:flex;gap:6px;align-items:center"><input id="fHr" inputmode="numeric" list="dlHr" placeholder="例如 72" autocomplete="off"><span class="unit">次/分</span></div></div>
-          <button class="add-note" type="button" data-note="status">＋ 加備註</button>
-          <div class="note-wrap" id="note-status"><label for="fStatusRemark">備註（選填）</label><textarea id="fStatusRemark"></textarea></div>
+  <!-- ===================== 今日 ===================== -->
+  <section class="view active" id="view-today">
+    <div class="datebar">
+      <button class="navbtn" id="date-prev" aria-label="上一日"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <div class="date-title">
+        <div class="dow" id="date-dow">星期五</div>
+        <h1 id="date-main">11月6日</h1>
+        <div class="sub" id="date-sub">2026年 · 今日</div>
+        <button class="today-jump" id="today-jump">返去今日</button>
+      </div>
+      <button class="navbtn" id="date-next" aria-label="下一日"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+    <div id="banner-zone"></div>
+    <div id="alert-zone"></div>
+
+    <!-- 1. 太太當日狀態 -->
+    <div class="card" id="card-status">
+      <div class="card-head">
+        <h2><span class="num">1</span>太太當日狀態</h2>
+        <span class="pill empty" data-pill="status">未填</span>
+      </div>
+      <div class="inherit-note" id="inherit-note">已自動填入昨日嘅數值，冇變就唔使理，有變先改返。</div>
+      <div class="grid3">
+        <div class="field"><label for="f-weight">體重</label>
+          <div class="unit-wrap"><input id="f-weight" size="1" list="dl-weight" inputmode="decimal" autocomplete="off" placeholder="—"><span class="unit">kg</span><span class="dd">▾</span></div>
+        </div>
+        <div class="field"><label for="f-protein">Protein</label>
+          <div class="unit-wrap"><input id="f-protein" size="1" list="dl-protein" inputmode="decimal" autocomplete="off" placeholder="—"><span class="unit">%</span><span class="dd">▾</span></div>
+        </div>
+        <div class="field"><label for="f-fat">Fat</label>
+          <div class="unit-wrap"><input id="f-fat" size="1" list="dl-fat" inputmode="decimal" autocomplete="off" placeholder="—"><span class="unit">%</span><span class="dd">▾</span></div>
         </div>
       </div>
+      <div class="bp-row">
+        <div class="field"><label for="f-sys">血壓 · 上壓</label>
+          <div class="unit-wrap"><input id="f-sys" size="1" class="wide-unit" list="dl-sys" inputmode="numeric" autocomplete="off" placeholder="—"><span class="unit">mmHg</span><span class="dd">▾</span></div>
+        </div>
+        <div class="slash">/</div>
+        <div class="field"><label for="f-dia">下壓</label>
+          <div class="unit-wrap"><input id="f-dia" size="1" class="wide-unit" list="dl-dia" inputmode="numeric" autocomplete="off" placeholder="—"><span class="unit">mmHg</span><span class="dd">▾</span></div>
+        </div>
+        <div class="field"><label for="f-hr">心跳<span style="color:var(--faint);font-weight:400">（選填）</span></label>
+          <div class="unit-wrap"><input id="f-hr" size="1" class="wide-unit" list="dl-hr" inputmode="numeric" autocomplete="off" placeholder="—"><span class="unit">bpm</span><span class="dd">▾</span></div>
+        </div>
+      </div>
+      <div class="remark">
+        <label for="r-status">備註 <span>（選填）</span></label>
+        <textarea id="r-status" rows="1" placeholder="例如：今朝未食早餐就量"></textarea>
+      </div>
+    </div>
 
-      <div class="card">
-        <div class="card-head"><span class="num">2.</span><span class="ic">💫</span><span class="ttl">太太頭暈</span><input type="checkbox" class="big" id="cDizzy" aria-label="太太頭暈"><span class="state" id="sDizzy">無</span></div>
-        <div class="body" id="bodyDizzy" style="display:none">
-          <div class="pill-row-label"><b>程度</b> · 選一</div>
-          <div class="pill-row" id="pillsDizzy">
-            <button type="button" class="pill" data-v="輕">💫 輕</button>
-            <button type="button" class="pill" data-v="中">💫💫💫 中</button>
-            <button type="button" class="pill" data-v="重">💫💫💫💫💫 重</button>
+    <!-- 2. 太太頭暈 -->
+    <div class="card" id="card-dizzy">
+      <label class="check-row warn main-row" id="row-dizzy">
+        <span class="num">2</span>
+        <span class="ico">💫</span>
+        <span class="check-text"><strong>太太頭暈</strong></span>
+        <input type="checkbox" id="chk-dizzy">
+        <span class="check-state" id="state-dizzy">無</span>
+      </label>
+      <div class="sub-block" id="dizzy-sev-block">
+        <div class="sub-label">程度 · 選一</div>
+        <div class="chips" data-chips="dizzy-sev">
+          <button type="button" data-v="輕">輕 <span class="sev-ico">💫</span></button>
+          <button type="button" data-v="中">中 <span class="sev-ico">💫💫💫</span></button>
+          <button type="button" data-v="重">重 <span class="sev-ico">💫💫💫💫💫</span></button>
+        </div>
+      </div>
+      <div class="remark">
+        <label for="r-dizzy">備註 <span>（選填）</span></label>
+        <textarea id="r-dizzy" rows="1" placeholder="例如：下晝企起身嗰陣暈咗一陣"></textarea>
+      </div>
+    </div>
+
+    <!-- 3. 太太便便 -->
+    <div class="card" id="card-wife">
+      <label class="check-row main-row" id="row-wife">
+        <span class="num">3</span>
+        <span class="ico">💩</span>
+        <span class="check-text"><strong>太太便便</strong></span>
+        <input type="checkbox" id="chk-wife">
+        <span class="check-state" id="state-wife">無</span>
+      </label>
+      <div class="sub-blocks">
+        <div class="sub-block" id="wife-shape-block">
+          <div class="sub-label">形狀 · 選一</div>
+          <div class="chips" data-chips="wife-shape">
+            <button type="button" data-v="香蕉"><span class="ico">🍌</span>香蕉</button>
+            <button type="button" data-v="石頭"><span class="ico">🪨</span>石頭</button>
+            <button type="button" data-v="爛"><span class="ico">💦</span>爛</button>
+            <button type="button" data-v="其他">其他</button>
           </div>
-          <button class="add-note" type="button" data-note="dizzy">＋ 加備註</button>
-          <div class="note-wrap" id="note-dizzy"><label for="fDizzyRemark">備註（選填）</label><textarea id="fDizzyRemark"></textarea></div>
+        </div>
+        <div class="sub-block" id="wife-blood-block">
+          <div class="sub-label">有血？</div>
+          <label class="check-row blood-row" id="row-wife-blood">
+            <input type="checkbox" id="chk-wife-blood">
+            <span class="check-text"><strong>🩸 有血</strong></span>
+            <span class="check-state" id="state-wife-blood">無血</span>
+          </label>
         </div>
       </div>
+      <div class="remark">
+        <label for="r-wife">備註 <span>（選填）</span></label>
+        <textarea id="r-wife" rows="1" placeholder="（選填）"></textarea>
+      </div>
+    </div>
 
-      <div class="card">
-        <div class="card-head"><span class="num">3.</span><span class="ic">💩</span><span class="ttl">太太便便</span><input type="checkbox" class="big" id="cWife" aria-label="太太便便"><span class="state" id="sWife">無</span></div>
-        <div class="body" id="bodyWife" style="display:none">
-          <div class="pill-row-label"><b>形狀</b> · 選一</div>
-          <div class="pill-row" id="pillsWife">
-            <button type="button" class="pill" data-v="香蕉">🍌 香蕉</button>
-            <button type="button" class="pill" data-v="石頭">🪨 石頭</button>
-            <button type="button" class="pill" data-v="爛">💦 爛</button>
-            <button type="button" class="pill" data-v="其他">🔹 其他</button>
+    <!-- 4. 兒子便便 -->
+    <div class="card" id="card-son">
+      <label class="check-row main-row" id="row-son">
+        <span class="num">4</span>
+        <span class="ico">💩</span>
+        <span class="check-text"><strong>兒子便便</strong></span>
+        <input type="checkbox" id="chk-son">
+        <span class="check-state" id="state-son">無</span>
+      </label>
+      <div class="sub-blocks">
+        <div class="sub-block" id="son-shape-block">
+          <div class="sub-label">形狀 · 選一</div>
+          <div class="chips" data-chips="son-shape">
+            <button type="button" data-v="香蕉"><span class="ico">🍌</span>香蕉</button>
+            <button type="button" data-v="石頭"><span class="ico">🪨</span>石頭</button>
+            <button type="button" data-v="爛"><span class="ico">💦</span>爛</button>
+            <button type="button" data-v="其他">其他</button>
           </div>
-          <div class="blood-row"><span class="ic">🩸</span><label for="cWifeBlood">有血</label><input type="checkbox" class="big" id="cWifeBlood" aria-label="太太便便有血"></div>
-          <button class="add-note" type="button" data-note="wife">＋ 加備註</button>
-          <div class="note-wrap" id="note-wife"><label for="fWifeRemark">備註（選填）</label><textarea id="fWifeRemark"></textarea></div>
+        </div>
+        <div class="sub-block" id="son-blood-block">
+          <div class="sub-label">有血？</div>
+          <label class="check-row blood-row" id="row-son-blood">
+            <input type="checkbox" id="chk-son-blood">
+            <span class="check-text"><strong>🩸 有血</strong></span>
+            <span class="check-state" id="state-son-blood">無血</span>
+          </label>
         </div>
       </div>
+      <div class="remark">
+        <label for="r-son">備註 <span>（選填）</span></label>
+        <textarea id="r-son" rows="1" placeholder="（選填）"></textarea>
+      </div>
+    </div>
 
+    <div class="submit-zone">
+      <button class="submit-btn" id="submit-btn" type="button">確認記錄</button>
+      <div class="submit-msg" id="submit-msg"></div>
+    </div>
+    <div class="foot-note">只作記錄之用 · 可補填今日及前 3 日</div>
+    <div class="ver-line">v1.0.2 · <button type="button" id="upd-btn">檢查更新</button></div>
+    <div class="upd-note" id="upd-note"></div>
+
+    <datalist id="dl-weight"></datalist>
+    <datalist id="dl-protein"></datalist>
+    <datalist id="dl-fat"></datalist>
+    <datalist id="dl-sys"></datalist>
+    <datalist id="dl-dia"></datalist>
+    <datalist id="dl-hr"></datalist>
+  </section>
+
+  <!-- ===================== 月曆 ===================== -->
+  <section class="view" id="view-cal">
+    <h2 class="view-title">月曆</h2>
+    <div class="card">
+      <div class="cal-head">
+        <button class="navbtn" id="cal-prev" aria-label="上個月"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <h2 id="cal-title">2026年11月</h2>
+        <button class="navbtn" id="cal-next" aria-label="下個月"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+      </div>
+      <div class="cal-filter">
+        <span class="filter-label">顯示邊個：</span>
+        <div class="chips" id="cal-filter">
+          <button type="button" data-f="all" class="on">全部</button>
+          <button type="button" data-f="wife">太太</button>
+          <button type="button" data-f="son">兒子</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="legend" id="cal-legend"></div>
+      <div class="day-detail" id="day-detail"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>本月小結</h2></div>
+      <div id="month-summary"></div>
+    </div>
+  </section>
+
+  <!-- ===================== 總覽 ===================== -->
+  <section class="view" id="view-dash">
+    <h2 class="view-title">總覽</h2>
+    <div class="range-toggle" id="range-toggle">
+      <button type="button" data-r="7" class="on">7 日</button>
+      <button type="button" data-r="30">30 日</button>
+      <button type="button" data-r="90">90 日</button>
+      <button type="button" data-r="180">180 日</button>
+    </div>
+    <div id="dash-alert-zone"></div>
+    <div class="dash-grid">
+      <div class="card wide">
+        <div class="card-head"><h2 id="dash-range-title">過去 7 日</h2></div>
+        <div class="week-stats">
+          <div class="stat"><div class="n" id="stat-diz">0 <small>日</small></div><div class="l">頭暈日數</div></div>
+          <div class="stat"><div class="n" id="stat-wb">0 <small>日</small></div><div class="l">太太有便便</div></div>
+          <div class="stat"><div class="n" id="stat-sb">0 <small>日</small></div><div class="l">兒子有便便</div></div>
+        </div>
+      </div>
       <div class="card">
-        <div class="card-head"><span class="num">4.</span><span class="ic">👦💩</span><span class="ttl">兒子便便</span><input type="checkbox" class="big" id="cSon" aria-label="兒子便便"><span class="state" id="sSon">無</span></div>
-        <div class="body" id="bodySon" style="display:none">
-          <div class="pill-row-label"><b>形狀</b> · 選一</div>
-          <div class="pill-row" id="pillsSon">
-            <button type="button" class="pill" data-v="香蕉">🍌 香蕉</button>
-            <button type="button" class="pill" data-v="石頭">🪨 石頭</button>
-            <button type="button" class="pill" data-v="爛">💦 爛</button>
-            <button type="button" class="pill" data-v="其他">🔹 其他</button>
-          </div>
-          <div class="blood-row"><span class="ic">🩸</span><label for="cSonBlood">有血</label><input type="checkbox" class="big" id="cSonBlood" aria-label="兒子便便有血"></div>
-          <button class="add-note" type="button" data-note="son">＋ 加備註</button>
-          <div class="note-wrap" id="note-son"><label for="fSonRemark">備註（選填）</label><textarea id="fSonRemark"></textarea></div>
-        </div>
+        <div class="card-head"><h2>體重走勢</h2><span class="pill filled" id="weight-range-label">過去 7 日</span></div>
+        <div class="chart-wrap" id="weight-chart"></div>
       </div>
-
-      <div class="confirm-wrap"><button class="confirm-btn" id="confirmBtn" type="button">確認記錄</button></div>
-      <div class="missing" id="missingBox"></div>
-      <footer>每日健康記錄 v1.0.1 · 資料只存喺呢部裝置，唔會上傳</footer>
-    </section>
-
-    <!-- ============ CALENDAR ============ -->
-    <section class="page" id="page-cal">
-      <div class="datebar">
-        <button type="button" id="prevMonth">‹ 上個月</button>
-        <div class="d"><span id="calLabel"></span></div>
-        <button type="button" id="nextMonth">下個月 ›</button>
+      <div class="card">
+        <div class="card-head"><h2>血壓走勢</h2><span class="pill filled" id="bp-range-label">過去 7 日</span></div>
+        <div class="chart-wrap" id="bp-chart"></div>
       </div>
-      <div class="chips" id="calFilter">
-        <button type="button" class="chip sel" data-f="all">全部</button>
-        <button type="button" class="chip" data-f="wife">太太</button>
-        <button type="button" class="chip" data-f="son">兒子</button>
+      <div class="card wide">
+        <div class="card-head"><h2>頭暈程度分佈</h2><span class="pill filled" id="diz-total-label">共 0 日有頭暈</span></div>
+        <div class="sev-rows" id="diz-sev-rows"></div>
       </div>
-      <div class="cal-head"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
-      <div class="cal-grid" id="calGrid"></div>
-      <div class="legend">
-        <b>圖例：</b>💫 頭暈 · 太便便 💩 太太便便 · 兒便便 💩 兒子便便 · 太便血 / 兒便血 💩🩸（有血係便便嘅其中一個屬性，同一個標記）<br>
-        冇便便嘅日子唔會顯示標記。撳一日睇詳情；補填只限今日同前 3 日。
-      </div>
-      <div id="dayDetail"></div>
-      <div class="summary" id="monthSummary"></div>
-    </section>
-
-    <!-- ============ DASHBOARD ============ -->
-    <section class="page" id="page-dash">
-      <div id="dashAlert"></div>
-      <div class="chips" id="dashRange">
-        <button type="button" class="chip sel" data-r="7">7日</button>
-        <button type="button" class="chip" data-r="30">30日</button>
-        <button type="button" class="chip" data-r="90">90日</button>
-        <button type="button" class="chip" data-r="180">180日</button>
-      </div>
-      <div class="stat-grid" id="dashStats"></div>
-      <div class="chart-card"><h3>⚖️ 體重走勢</h3><div class="sub" id="weightRange"></div><div id="weightChart"></div></div>
-      <div class="chart-card"><h3>🩺 血壓走勢</h3><div class="sub" id="bpRange"></div><div id="bpChart"></div></div>
-      <div class="chart-card"><h3>💫 頭暈分佈</h3><div class="sub" id="dizzyTitle"></div><div id="dizzyBars"></div></div>
-      <div class="chart-card"><h3>💩 便便形狀</h3><div class="sub" id="bowelTitle"></div><div id="bowelBars"></div></div>
-      <footer>每日健康記錄 v1.0.1 · 只記低，唔做診斷</footer>
-    </section>
-  </main>
-  <nav class="tabs">
-    <button type="button" class="active" data-page="today"><span class="ti">📝</span>今日</button>
-    <button type="button" data-page="cal"><span class="ti">📅</span>月曆</button>
-    <button type="button" data-page="dash"><span class="ti">📊</span>總覽</button>
-  </nav>
+    </div>
+    <div class="foot-note">數字同圖表只係將記錄列返出嚟，唔作任何判斷</div>
+  </section>
 </div>
-<datalist id="dlWeight"></datalist>
-<datalist id="dlProtein"></datalist>
-<datalist id="dlFat"></datalist>
-<datalist id="dlSys"></datalist>
-<datalist id="dlDia"></datalist>
-<datalist id="dlHr"></datalist>
+
+<nav class="tabbar" aria-label="主導航">
+  <button type="button" data-tab="today" class="on">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+    今日<span class="tdot" id="tab-dot"></span>
+  </button>
+  <button type="button" data-tab="cal">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    月曆
+  </button>
+  <button type="button" data-tab="dash">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+    總覽
+  </button>
+</nav>
+
 <script>
-'use strict';
-var APP_VERSION = '1.0.1';
-var LS_KEY = 'dht-v1';
-var store = { days: {} };
-try { var raw = localStorage.getItem(LS_KEY); if (raw) store = JSON.parse(raw); if (!store.days) store.days = {}; } catch (e) { store = { days: {} }; }
-function saveStore() { try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch (e) {} }
-function pad(n) { return (n < 10 ? '0' : '') + n; }
-function fmt(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
-function parseDS(ds) { var p = ds.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
-function addDays(ds, n) { var d = parseDS(ds); d.setDate(d.getDate() + n); return fmt(d); }
-function todayStr() { return fmt(new Date()); }
-function zhDate(ds) { var d = parseDS(ds); var w = ['日','一','二','三','四','五','六'][d.getDay()]; return (d.getMonth() + 1) + '月' + d.getDate() + '日（星期' + w + '）'; }
-function emptyDay() { return { status: { weight: '', protein: '', fat: '', sys: '', dia: '', hr: '', remark: '' }, dizzy: { has: false, severity: '', remark: '' }, wife: { has: false, shape: '', blood: false, remark: '' }, son: { has: false, shape: '', blood: false, remark: '' }, confirmed: false }; }
-function clone(o) { return JSON.parse(JSON.stringify(o)); }
-function $(id) { return document.getElementById(id); }
-function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+(function () {
+  'use strict';
+  var APP_VERSION = '1.0.2';
+  var LS_KEY = 'dht-v1';
+  var LS_UPDATE_KEY = 'dht-last-update-check';
+  var $ = function (id) { return document.getElementById(id); };
+  var DOW = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+  var MIN_DATE = new Date(2026, 10, 3); // 2026-11-03 唔早過
+  MIN_DATE.setHours(0, 0, 0, 0);
+  var SEV_LABELS = ['輕', '中', '重'];
+  var SHAPE_LABELS = ['香蕉', '石頭', '爛', '其他'];
+  var RANGES = {
+    weight: { min: 40, max: 90, step: 0.5, digits: 1 },
+    protein: { min: 5, max: 30, step: 1, digits: 0 },
+    fat: { min: 10, max: 50, step: 1, digits: 0 },
+    sys: { min: 90, max: 180, step: 5, digits: 0 },
+    dia: { min: 50, max: 120, step: 5, digits: 0 },
+    hr: { min: 40, max: 120, step: 5, digits: 0 }
+  };
 
-/* ---------- datalists: common range + previously entered values ---------- */
-var RANGES = {
-  dlWeight: { min: 40, max: 90, step: 0.5, digits: 1 },
-  dlProtein: { min: 5, max: 30, step: 1, digits: 0 },
-  dlFat: { min: 10, max: 50, step: 1, digits: 0 },
-  dlSys: { min: 90, max: 180, step: 5, digits: 0 },
-  dlDia: { min: 50, max: 120, step: 5, digits: 0 },
-  dlHr: { min: 40, max: 120, step: 5, digits: 0 }
-};
-var FIELD_OF_DL = { dlWeight: 'weight', dlProtein: 'protein', dlFat: 'fat', dlSys: 'sys', dlDia: 'dia', dlHr: 'hr' };
-function buildDatalists() {
-  Object.keys(RANGES).forEach(function (dlId) {
-    var r = RANGES[dlId], field = FIELD_OF_DL[dlId];
-    var vals = {};
-    for (var v = r.min; v <= r.max + 1e-9; v += r.step) vals[(Math.round(v * 10) / 10).toFixed(r.digits)] = true;
-    Object.keys(store.days).forEach(function (ds) {
-      var s = store.days[ds] && store.days[ds].status;
-      if (s && s[field] !== '' && s[field] != null) vals[String(s[field])] = true;
+  // ---------- date helpers ----------
+  function ds(d) {
+    var y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
+    return y + '-' + (m < 10 ? '0' + m : m) + '-' + (day < 10 ? '0' + day : day);
+  }
+  function today() { var d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+  function fromDs(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function sameDay(a, b) { return a && b && a.getTime() === b.getTime(); }
+  function minBackfill() { return addDays(today(), -3); }
+  function clampDate(d) {
+    if (d < MIN_DATE) return new Date(MIN_DATE);
+    if (d > today()) return today();
+    return d;
+  }
+  function fmtDate(d) { return (d.getMonth() + 1) + '月' + d.getDate() + '日'; }
+  function fmtDateFull(d) { return fmtDate(d) + '（' + DOW[d.getDay()] + '）'; }
+
+  // ---------- storage ----------
+  function loadStore() {
+    try {
+      var s = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+      if (s && typeof s === 'object' && s.days && typeof s.days === 'object') return s;
+    } catch (e) { /* 壞咗就當冇 */ }
+    return { days: {} };
+  }
+  function saveStore() { localStorage.setItem(LS_KEY, JSON.stringify(store)); }
+  function emptyDay() {
+    return {
+      status: { weight: '', protein: '', fat: '', sys: '', dia: '', hr: '', remark: '' },
+      dizzy: { has: false, severity: '', remark: '' },
+      wife: { has: false, shape: '', blood: false, remark: '' },
+      son: { has: false, shape: '', blood: false, remark: '' },
+      confirmed: false
+    };
+  }
+  function getDay(s) { return store.days[s] || emptyDay(); }
+  var store = loadStore();
+
+  // ---------- state ----------
+  var selDate = today();
+  var confirmedShown = false;
+  var rangeDays = 7;
+  var calYear = today().getFullYear(), calMonth = today().getMonth();
+  var calFilter = 'all';
+  var dirty = false; // 有未撳確認嘅改動
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
-    var list = Object.keys(vals).map(Number).sort(function (a, b) { return a - b; });
-    var dl = $(dlId);
-    dl.innerHTML = list.map(function (x) { return '<option value="' + (r.digits ? x.toFixed(r.digits) : x) + '">'; }).join('');
-  });
-}
+  }
+  function num(v) { var n = parseFloat(v); return isNaN(n) ? null : n; }
 
-/* ---------- today form state ---------- */
-var selDate = todayStr();
-var draft = emptyDay();
-var defaultsApplied = false;
-var confirmedToday = false;
+  // ---------- status 填咗未 ----------
+  function statusFilled(st) {
+    return !!(st.weight || st.protein || st.fat || st.sys || st.dia || st.hr);
+  }
+  function cardsReady(rec) {
+    var n = 0;
+    if (statusFilled(rec.status)) n++;
+    if (rec.dizzy.has) n++;
+    if (rec.wife.has) n++;
+    if (rec.son.has) n++;
+    return n;
+  }
 
-function editable(ds) { var t = todayStr(); return ds <= t && ds >= addDays(t, -3); }
-function loadForm(ds) {
-  selDate = ds;
-  var saved = store.days[ds];
-  if (saved) { draft = clone(saved); confirmedToday = !!saved.confirmed; defaultsApplied = false; }
-  else {
-    draft = emptyDay(); confirmedToday = false; defaultsApplied = false;
-    var y = store.days[addDays(ds, -1)];
-    if (y && y.status) {
-      var any = false;
-      ['weight', 'protein', 'fat', 'sys', 'dia', 'hr'].forEach(function (k) { if (y.status[k] !== '' && y.status[k] != null) { draft.status[k] = y.status[k]; any = true; } });
-      defaultsApplied = any;
+  // ---------- 提示：連續 3 日冇便便 ----------
+  function noBowelStreak(who) {
+    var c = 0, d = addDays(today(), -1);
+    for (var i = 0; i < 30; i++) {
+      var rec = store.days[ds(d)];
+      if (!rec) break; // 未填嘅日子唔計
+      if (rec[who].has) break;
+      c++;
+      d = addDays(d, -1);
     }
+    return c;
   }
-  renderForm();
-}
-function readDraftFromInputs() {
-  draft.status.weight = $('fWeight').value.trim();
-  draft.status.protein = $('fProtein').value.trim();
-  draft.status.fat = $('fFat').value.trim();
-  draft.status.sys = $('fSys').value.trim();
-  draft.status.dia = $('fDia').value.trim();
-  draft.status.hr = $('fHr').value.trim();
-  draft.status.remark = $('fStatusRemark').value;
-  draft.dizzy.has = $('cDizzy').checked;
-  draft.dizzy.remark = $('fDizzyRemark').value;
-  draft.wife.has = $('cWife').checked;
-  draft.wife.blood = $('cWifeBlood').checked;
-  draft.wife.remark = $('fWifeRemark').value;
-  draft.son.has = $('cSon').checked;
-  draft.son.blood = $('cSonBlood').checked;
-  draft.son.remark = $('fSonRemark').value;
-}
-function renderForm() {
-  var isToday = selDate === todayStr();
-  $('dateLabel').textContent = zhDate(selDate);
-  $('dateSub').textContent = isToday ? '今日' : (editable(selDate) ? '可補填' : '只可查看');
-  $('prevDay').disabled = !editable(addDays(selDate, -1)) && addDays(selDate, -1) < addDays(todayStr(), -3);
-  $('nextDay').disabled = selDate >= todayStr();
-  $('fWeight').value = draft.status.weight || '';
-  $('fProtein').value = draft.status.protein || '';
-  $('fFat').value = draft.status.fat || '';
-  $('fSys').value = draft.status.sys || '';
-  $('fDia').value = draft.status.dia || '';
-  $('fHr').value = draft.status.hr || '';
-  $('fStatusRemark').value = draft.status.remark || '';
-  $('defaultNote').style.display = defaultsApplied ? 'block' : 'none';
-  setCheck('cDizzy', 'sDizzy', 'bodyDizzy', draft.dizzy.has);
-  setPills('pillsDizzy', draft.dizzy.severity);
-  $('fDizzyRemark').value = draft.dizzy.remark || '';
-  setCheck('cWife', 'sWife', 'bodyWife', draft.wife.has);
-  setPills('pillsWife', draft.wife.shape);
-  $('cWifeBlood').checked = !!draft.wife.blood;
-  $('fWifeRemark').value = draft.wife.remark || '';
-  setCheck('cSon', 'sSon', 'bodySon', draft.son.has);
-  setPills('pillsSon', draft.son.shape);
-  $('cSonBlood').checked = !!draft.son.blood;
-  $('fSonRemark').value = draft.son.remark || '';
-  ['status', 'dizzy', 'wife', 'son'].forEach(function (k) {
-    var w = $('note-' + k);
-    var ta = w.querySelector('textarea');
-    w.classList.toggle('open', !!(ta && ta.value));
-  });
-  renderBanner();
-  renderConfirm();
-  renderAlerts();
-  buildDatalists();
-}
-function setCheck(cid, sid, bid, has) {
-  $(cid).checked = !!has;
-  $(sid).textContent = has ? '有' : '無';
-  $(sid).classList.toggle('yes', !!has);
-  $(bid).style.display = has ? 'block' : 'none';
-}
-function setPills(rowId, val) {
-  Array.prototype.forEach.call($(rowId).querySelectorAll('.pill'), function (p) { p.classList.toggle('sel', p.getAttribute('data-v') === val); });
-}
-function getPill(rowId) { var s = $(rowId).querySelector('.pill.sel'); return s ? s.getAttribute('data-v') : ''; }
-function cardsReady() {
-  var n = 0;
-  if (draft.status.weight !== '') n++;
-  if (draft.dizzy.has) n++;
-  if (draft.wife.has) n++;
-  if (draft.son.has) n++;
-  return n;
-}
-function renderBanner() {
-  var b = $('remindBanner');
-  var n = cardsReady();
-  if (draft.confirmed) { b.className = 'banner ok'; b.textContent = '今日已確認 ✓（4/4）'; }
-  else {
-    b.className = 'banner warn';
-    b.textContent = (selDate === todayStr() ? '今日未填齊（' + n + '/4）' : zhDate(selDate) + '未確認（' + n + '/4）') + ' — 記低先撳「確認記錄」。';
+  function currentAlerts() {
+    var out = [];
+    var w = noBowelStreak('wife'), s = noBowelStreak('son');
+    if (w >= 3) out.push({ who: 'wife', n: w, label: '太太' });
+    if (s >= 3) out.push({ who: 'son', n: s, label: '兒子' });
+    return out;
   }
-}
-function renderConfirm() {
-  var btn = $('confirmBtn');
-  var canEdit = editable(selDate);
-  btn.style.display = canEdit ? 'block' : 'none';
-  if (!canEdit) return;
-  if (draft.confirmed) { btn.textContent = '已確認 ✓'; btn.classList.add('done'); }
-  else { btn.textContent = '確認記錄'; btn.classList.remove('done'); }
-}
-function onEdit() {
-  if (draft.confirmed) { draft.confirmed = false; confirmedToday = false; }
-  defaultsApplied = false;
-  renderBanner();
-  renderConfirm();
-  $('missingBox').classList.remove('show');
-}
-function bindPills(rowId, apply) {
-  $(rowId).addEventListener('click', function (e) {
-    var t = e.target.closest('.pill'); if (!t) return;
-    apply(t.getAttribute('data-v'));
-    onEdit();
-  });
-}
-function initToday() {
-  ['fWeight', 'fProtein', 'fFat', 'fSys', 'fDia', 'fHr', 'fStatusRemark', 'fDizzyRemark', 'fWifeRemark', 'fSonRemark'].forEach(function (id) {
-    $(id).addEventListener('input', function () { readDraftFromInputs(); onEdit(); });
-  });
-  $('cDizzy').addEventListener('change', function () { readDraftFromInputs(); if (!draft.dizzy.has) draft.dizzy.severity = ''; setCheck('cDizzy', 'sDizzy', 'bodyDizzy', draft.dizzy.has); setPills('pillsDizzy', draft.dizzy.severity); onEdit(); });
-  $('cWife').addEventListener('change', function () { readDraftFromInputs(); if (!draft.wife.has) { draft.wife.shape = ''; draft.wife.blood = false; $('cWifeBlood').checked = false; } setCheck('cWife', 'sWife', 'bodyWife', draft.wife.has); setPills('pillsWife', draft.wife.shape); onEdit(); });
-  $('cSon').addEventListener('change', function () { readDraftFromInputs(); if (!draft.son.has) { draft.son.shape = ''; draft.son.blood = false; $('cSonBlood').checked = false; } setCheck('cSon', 'sSon', 'bodySon', draft.son.has); setPills('pillsSon', draft.son.shape); onEdit(); });
-  $('cWifeBlood').addEventListener('change', function () { readDraftFromInputs(); onEdit(); });
-  $('cSonBlood').addEventListener('change', function () { readDraftFromInputs(); onEdit(); });
-  bindPills('pillsDizzy', function (v) { draft.dizzy.severity = v; setPills('pillsDizzy', v); });
-  bindPills('pillsWife', function (v) { draft.wife.shape = v; setPills('pillsWife', v); });
-  bindPills('pillsSon', function (v) { draft.son.shape = v; setPills('pillsSon', v); });
-  document.querySelectorAll('.add-note').forEach(function (b) {
-    b.addEventListener('click', function () { var w = $('note-' + b.getAttribute('data-note')); w.classList.toggle('open'); if (w.classList.contains('open')) w.querySelector('textarea').focus(); });
-  });
-  $('prevDay').addEventListener('click', function () { var d = addDays(selDate, -1); if (d >= addDays(todayStr(), -3)) loadForm(d); });
-  $('nextDay').addEventListener('click', function () { var d = addDays(selDate, 1); if (d <= todayStr()) loadForm(d); });
-  $('confirmBtn').addEventListener('click', function () {
-    readDraftFromInputs();
-    draft.dizzy.severity = getPill('pillsDizzy');
-    draft.wife.shape = getPill('pillsWife');
-    draft.son.shape = getPill('pillsSon');
+  var SVG_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+  function alertHTML(a) {
+    return '<div class="banner alert">' + SVG_ALERT + '<div><div class="bt">' + a.label + '已經連續 ' + a.n + ' 日冇便便</div>' +
+      '<div class="bs">呢個提示只按你填咗「冇」嘅日子計，未填嘅日子唔會計。</div></div></div>';
+  }
+  function renderAlerts() {
+    var html = currentAlerts().map(alertHTML).join('');
+    var az = $('alert-zone'); if (az) az.innerHTML = html;
+    var dz = $('dash-alert-zone'); if (dz) dz.innerHTML = html;
+  }
+
+  // ---------- 今日 banner ----------
+  var SVG_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+  var SVG_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+  function renderBanner(rec) {
+    if (!rec) rec = getDay(ds(selDate));
+    var n = cardsReady(rec);
+    var done = n >= 4;
     var missing = [];
-    if (draft.dizzy.has && !draft.dizzy.severity) missing.push('太太頭暈：程度未選');
-    if (draft.wife.has && !draft.wife.shape) missing.push('太太便便：形狀未選');
-    if (draft.son.has && !draft.son.shape) missing.push('兒子便便：形狀未選');
-    var box = $('missingBox');
+    if (!statusFilled(rec.status)) missing.push('太太當日狀態');
+    if (!rec.dizzy.has) missing.push('頭暈');
+    if (!rec.wife.has) missing.push('太太便便');
+    if (!rec.son.has) missing.push('兒子便便');
+    var z = $('banner-zone');
+    if (!z) return;
+    if (done) {
+      z.innerHTML = '<div class="banner done">' + SVG_CHECK + '<div style="flex:1"><div class="bt">今日已填齊（4 / 4）</div>' +
+        '<div class="bs">撳下面「確認記錄」之後，改咗嘢要再確認一次。</div>' +
+        '<div class="progress"><i style="width:100%"></i></div></div></div>';
+    } else {
+      z.innerHTML = '<div class="banner todo">' + SVG_CLOCK + '<div style="flex:1"><div class="bt">今日未填齊（' + n + ' / 4）</div>' +
+        '<div class="bs">仲差：' + esc(missing.join('、')) + '</div>' +
+        '<div class="progress"><i style="width:' + (n * 25) + '%"></i></div></div></div>';
+    }
+    var dot = $('tab-dot');
+    if (dot) dot.classList.toggle('show', !done && sameDay(selDate, today()));
+  }
+
+  // ---------- date head ----------
+  function renderDateHead() {
+    var isToday = sameDay(selDate, today());
+    var isMin = sameDay(selDate, MIN_DATE);
+    var isBackfill = !isToday && selDate >= minBackfill();
+    $('date-dow').textContent = DOW[selDate.getDay()];
+    $('date-main').textContent = fmtDate(selDate);
+    $('date-sub').textContent = selDate.getFullYear() + '年 · ' + (isToday ? '今日' : isBackfill ? '補填' : '只可睇');
+    $('date-prev').disabled = isMin;
+    $('date-next').disabled = isToday;
+    $('today-jump').classList.toggle('show', !isToday);
+  }
+  $('date-prev').addEventListener('click', function () { setDate(addDays(selDate, -1)); });
+  $('date-next').addEventListener('click', function () { setDate(addDays(selDate, 1)); });
+  $('today-jump').addEventListener('click', function () { setDate(today()); });
+  function setDate(d) { selDate = clampDate(d); dirty = false; confirmedShown = false; loadForm(); }
+
+  // ---------- 昨日數值自動填入 ----------
+  function yesterdayStatus() {
+    var rec = store.days[ds(addDays(selDate, -1))];
+    return rec ? rec.status : null;
+  }
+
+  // ---------- 今日表單 ----------
+  function loadForm() {
+    var key = ds(selDate);
+    var rec = getDay(key);
+    var st = rec.status;
+    var inherited = false;
+    if (!statusFilled(st)) {
+      var y = yesterdayStatus();
+      if (y && statusFilled(y)) {
+        ['weight', 'protein', 'fat', 'sys', 'dia', 'hr'].forEach(function (k) { st[k] = y[k] || ''; });
+        inherited = true;
+      }
+    }
+    $('inherit-note').classList.toggle('show', inherited && !rec.confirmed);
+    $('f-weight').value = st.weight || '';
+    $('f-protein').value = st.protein || '';
+    $('f-fat').value = st.fat || '';
+    $('f-sys').value = st.sys || '';
+    $('f-dia').value = st.dia || '';
+    $('f-hr').value = st.hr || '';
+    $('r-status').value = st.remark || '';
+    $('chk-dizzy').checked = !!rec.dizzy.has;
+    setChips('dizzy-sev', rec.dizzy.severity);
+    $('r-dizzy').value = rec.dizzy.remark || '';
+    $('chk-wife').checked = !!rec.wife.has;
+    setChips('wife-shape', rec.wife.shape);
+    $('chk-wife-blood').checked = !!rec.wife.blood;
+    $('r-wife').value = rec.wife.remark || '';
+    $('chk-son').checked = !!rec.son.has;
+    setChips('son-shape', rec.son.shape);
+    $('chk-son-blood').checked = !!rec.son.blood;
+    $('r-son').value = rec.son.remark || '';
+    confirmedShown = !!rec.confirmed;
+    dirty = false;
+    refreshPills();
+    renderDateHead();
+  }
+
+  function refreshPills() {
+    // 卡 1 完成狀態
+    var st = {
+      weight: $('f-weight').value, protein: $('f-protein').value, fat: $('f-fat').value,
+      sys: $('f-sys').value, dia: $('f-dia').value, hr: $('f-hr').value
+    };
+    var pill = document.querySelector('[data-pill="status"]');
+    if (pill) {
+      pill.textContent = statusFilled(st) ? '已填' : '未填';
+      pill.className = 'pill ' + (statusFilled(st) ? 'filled' : 'empty');
+    }
+    var d = collectForm();
+    checkUI('row-dizzy', 'chk-dizzy', 'state-dizzy', d.dizzy.has, '有', '無');
+    checkUI('row-wife', 'chk-wife', 'state-wife', d.wife.has, '有', '無');
+    checkUI('row-son', 'chk-son', 'state-son', d.son.has, '有', '無');
+    checkUI('row-wife-blood', 'chk-wife-blood', 'state-wife-blood', d.wife.blood, '有血', '無血');
+    checkUI('row-son-blood', 'chk-son-blood', 'state-son-blood', d.son.blood, '有血', '無血');
+    $('dizzy-sev-block').classList.toggle('show', d.dizzy.has);
+    $('wife-shape-block').classList.toggle('show', d.wife.has);
+    $('wife-blood-block').classList.toggle('show', d.wife.has);
+    $('son-shape-block').classList.toggle('show', d.son.has);
+    $('son-blood-block').classList.toggle('show', d.son.has);
+    renderBanner(d);
+    var btn = $('submit-btn');
+    btn.classList.toggle('confirmed', confirmedShown && !dirty);
+    btn.textContent = (confirmedShown && !dirty) ? '已確認 ✓' : '確認記錄';
+  }
+
+  function checkUI(rowId, chkId, stateId, isYes, yesText, noText) {
+    var row = $(rowId); if (!row) return;
+    var stEl = $(stateId);
+    row.classList.toggle('on', isYes);
+    if (stEl) stEl.textContent = isYes ? yesText : noText;
+  }
+
+  // ---------- chips ----------
+  function setChips(group, value) {
+    document.querySelectorAll('[data-chips="' + group + '"] button').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-v') === value);
+    });
+  }
+  function getChip(group) {
+    var on = document.querySelector('[data-chips="' + group + '"] button.on');
+    return on ? on.getAttribute('data-v') : '';
+  }
+  document.querySelectorAll('[data-chips]').forEach(function (wrap) {
+    wrap.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      wrap.querySelectorAll('button').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      markDirty();
+    });
+  });
+
+  // ---------- collect / validate / submit ----------
+  function collectForm() {
+    return {
+      status: {
+        weight: $('f-weight').value.trim(), protein: $('f-protein').value.trim(),
+        fat: $('f-fat').value.trim(), sys: $('f-sys').value.trim(),
+        dia: $('f-dia').value.trim(), hr: $('f-hr').value.trim(),
+        remark: $('r-status').value.trim()
+      },
+      dizzy: { has: $('chk-dizzy').checked, severity: getChip('dizzy-sev'), remark: $('r-dizzy').value.trim() },
+      wife: { has: $('chk-wife').checked, shape: getChip('wife-shape'), blood: $('chk-wife-blood').checked, remark: $('r-wife').value.trim() },
+      son: { has: $('chk-son').checked, shape: getChip('son-shape'), blood: $('chk-son-blood').checked, remark: $('r-son').value.trim() }
+    };
+  }
+  function markDirty() {
+    dirty = true;
+    var msg = $('submit-msg');
+    msg.className = 'submit-msg'; msg.textContent = '';
+    refreshPills();
+  }
+  ['f-weight', 'f-protein', 'f-fat', 'f-sys', 'f-dia', 'f-hr', 'r-status', 'r-dizzy', 'r-wife', 'r-son'].forEach(function (id) {
+    $(id).addEventListener('input', markDirty);
+  });
+  ['chk-dizzy', 'chk-wife', 'chk-son', 'chk-wife-blood', 'chk-son-blood'].forEach(function (id) {
+    $(id).addEventListener('change', markDirty);
+  });
+
+  $('submit-btn').addEventListener('click', function () {
+    var d = collectForm();
+    var missing = [];
+    if (d.dizzy.has && !d.dizzy.severity) missing.push('頭暈程度');
+    if (d.wife.has && !d.wife.shape) missing.push('太太便便形狀');
+    if (d.son.has && !d.son.shape) missing.push('兒子便便形狀');
+    var msg = $('submit-msg');
     if (missing.length) {
-      box.innerHTML = '仲差以下項目：<br>• ' + missing.join('<br>• ');
-      box.classList.add('show');
+      msg.className = 'submit-msg err show';
+      msg.textContent = '仲差：' + missing.join('、') + '。填好再撳確認。';
       return;
     }
-    box.classList.remove('show');
-    draft.confirmed = true;
-    store.days[selDate] = clone(draft);
+    var key = ds(selDate);
+    var rec = getDay(key);
+    rec.status = d.status; rec.dizzy = d.dizzy; rec.wife = d.wife; rec.son = d.son;
+    rec.confirmed = true;
+    store.days[key] = rec;
     saveStore();
-    confirmedToday = true;
-    renderBanner();
-    renderConfirm();
+    confirmedShown = true;
+    dirty = false;
+    msg.className = 'submit-msg ok show';
+    msg.textContent = '✓ 已確認 ' + fmtDate(selDate) + ' 嘅記錄。';
+    refreshPills();
     renderAlerts();
-    buildDatalists();
+    renderCal();
+    renderDash();
   });
-}
 
-/* ---------- bowel alert: 3 consecutive days explicitly recorded 無便便 ---------- */
-function bowelStreak(person) {
-  var latest = null;
-  var ds = todayStr();
-  for (var i = 0; i < 60; i++) { var d = addDays(ds, -i); if (store.days[d]) { latest = d; break; } }
-  if (!latest) return 0;
-  var n = 0, d = latest;
-  for (var j = 0; j < 30; j++) {
-    var day = store.days[d];
-    if (!day) break;
-    if (day[person] && day[person].has === false) { n++; d = addDays(d, -1); }
-    else break;
+  // ---------- pull-down list (datalist) ----------
+  function buildDatalists() {
+    var seen = { weight: new Set(), protein: new Set(), fat: new Set(), sys: new Set(), dia: new Set(), hr: new Set() };
+    Object.keys(store.days).forEach(function (k) {
+      var st = store.days[k].status;
+      if (!st) return;
+      ['weight', 'protein', 'fat', 'sys', 'dia', 'hr'].forEach(function (f) {
+        if (st[f] !== '' && st[f] != null) seen[f].add(String(st[f]));
+      });
+    });
+    Object.keys(RANGES).forEach(function (f) {
+      var r = RANGES[f];
+      var vals = new Set();
+      for (var v = r.min; v <= r.max + 1e-9; v += r.step) vals.add(v.toFixed(r.digits));
+      seen[f].forEach(function (x) { vals.add(x); });
+      var arr = Array.from(vals).map(function (x) { return parseFloat(x); }).sort(function (a, b) { return a - b; });
+      $('dl-' + f).innerHTML = arr.map(function (x) {
+        return '<option value="' + (r.digits ? x.toFixed(r.digits) : x) + '">';
+      }).join('');
+    });
   }
-  return n;
-}
-function renderAlerts() {
-  var w = bowelStreak('wife'), s = bowelStreak('son');
-  var html = '';
-  if (w >= 3) html += '<div class="banner alert">⚠️ 太太已經連續 ' + w + ' 日無便便</div>';
-  if (s >= 3) html += '<div class="banner alert">⚠️ 兒子已經連續 ' + s + ' 日無便便</div>';
-  $('alertBox').innerHTML = html;
-  var da = $('dashAlert');
-  if (da) da.innerHTML = html;
-}
 
-/* ---------- calendar ---------- */
-var calYear, calMonth, calFilter = 'all', calSel = null;
-function initCal() {
-  var t = new Date(); calYear = t.getFullYear(); calMonth = t.getMonth(); calSel = todayStr();
-  $('prevMonth').addEventListener('click', function () { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCal(); });
-  $('nextMonth').addEventListener('click', function () { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCal(); });
-  $('calFilter').addEventListener('click', function (e) {
-    var b = e.target.closest('.chip'); if (!b) return;
-    calFilter = b.getAttribute('data-f');
-    Array.prototype.forEach.call($('calFilter').querySelectorAll('.chip'), function (c) { c.classList.toggle('sel', c === b); });
+  // ---------- tabs ----------
+  function switchTab(name) {
+    document.querySelectorAll('.tabbar button').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-tab') === name);
+    });
+    document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
+    $('view-' + name).classList.add('active');
+    window.scrollTo(0, 0);
+    if (name === 'cal') renderCal();
+    if (name === 'dash') renderDash();
+  }
+  document.querySelectorAll('.tabbar button').forEach(function (b) {
+    b.addEventListener('click', function () { switchTab(b.getAttribute('data-tab')); });
+  });
+
+  // ---------- calendar ----------
+  function bowelMark(rec, who, filter) {
+    if (filter !== 'all' && filter !== who) return '';
+    if (!rec || !rec[who] || !rec[who].has) return '';
+    var cls = who === 'wife' ? 'wife' : 'son';
+    var pre = who === 'wife' ? '太' : '兒';
+    if (rec[who].blood) return '<span class="person-mark ' + cls + '">' + pre + '便血🩸</span>';
+    return '<span class="person-mark ' + cls + '">' + pre + '💩</span>';
+  }
+  function renderCal() {
+    var y = calYear, m = calMonth;
+    $('cal-title').textContent = y + '年' + (m + 1) + '月';
+    var first = new Date(y, m, 1);
+    var daysInMonth = new Date(y, m + 1, 0).getDate();
+    var startDow = first.getDay();
+    var html = '<div class="dow">日</div><div class="dow">一</div><div class="dow">二</div><div class="dow">三</div><div class="dow">四</div><div class="dow">五</div><div class="dow">六</div>';
+    for (var i = 0; i < startDow; i++) html += '<div class="day blank"></div>';
+    for (var d = 1; d <= daysInMonth; d++) {
+      var date = new Date(y, m, d);
+      var key = ds(date);
+      var rec = store.days[key];
+      var marks = '';
+      if (rec && rec.confirmed) {
+        marks += bowelMark(rec, 'wife', calFilter);
+        marks += bowelMark(rec, 'son', calFilter);
+        if (calFilter !== 'son' && rec.dizzy.has) marks += '<span style="font-size:11.5px">💫</span>';
+        if (!marks) marks = '<span class="none-mark">—</span>';
+      }
+      var cls = 'day';
+      if (sameDay(date, today())) cls += ' today';
+      if (sameDay(date, selDate)) cls += ' sel';
+      if (date > today()) cls += ' future';
+      html += '<div class="' + cls + '" data-date="' + key + '"><span class="dn">' + d + '</span><span class="marks">' + marks + '</span></div>';
+    }
+    $('cal-grid').innerHTML = html;
+    $('cal-legend').innerHTML =
+      '<span><span class="dot" style="background:var(--amber)"></span>💫 太太有頭暈</span>' +
+      '<span><span class="person-mark wife">太💩</span> 太太有便便</span>' +
+      '<span><span class="person-mark son">兒💩</span> 兒子有便便</span>' +
+      '<span><span class="person-mark wife">太便血🩸</span> 太便血（有血係便便嘅其中一個屬性，同一個標記）</span>';
+    renderDayDetail();
+    renderMonthSummary();
+  }
+  $('cal-grid').addEventListener('click', function (e) {
+    var cell = e.target.closest('.day');
+    if (!cell || cell.classList.contains('blank') || cell.classList.contains('future')) return;
+    selDate = fromDs(cell.getAttribute('data-date'));
+    dirty = false; confirmedShown = false;
     renderCal();
   });
-  renderCal();
-}
-function dayMarks(ds) {
-  var day = store.days[ds];
-  var out = [];
-  if (!day) return out;
-  if (calFilter !== 'son' && day.dizzy && day.dizzy.has) out.push('<span class="m-diz">💫</span>');
-  if (calFilter !== 'son' && day.wife && day.wife.has) out.push('<span class="m-wife">太' + (day.wife.blood ? '便血 💩🩸' : '便便 💩') + '</span>');
-  if (calFilter !== 'wife' && day.son && day.son.has) out.push('<span class="m-son">兒' + (day.son.blood ? '便血 💩🩸' : '便便 💩') + '</span>');
-  return out;
-}
-function renderCal() {
-  $('calLabel').textContent = calYear + '年' + (calMonth + 1) + '月';
-  var first = new Date(calYear, calMonth, 1);
-  var startDow = (first.getDay() + 6) % 7; // Monday first
-  var daysIn = new Date(calYear, calMonth + 1, 0).getDate();
-  var prevDays = new Date(calYear, calMonth, 0).getDate();
-  var cells = '';
-  for (var i = 0; i < 42; i++) {
-    var dnum, ds, other = false;
-    if (i < startDow) { dnum = prevDays - startDow + 1 + i; var pm = calMonth - 1, py = calYear; if (pm < 0) { pm = 11; py--; } ds = py + '-' + pad(pm + 1) + '-' + pad(dnum); other = true; }
-    else if (i >= startDow + daysIn) { dnum = i - startDow - daysIn + 1; var nm = calMonth + 1, ny = calYear; if (nm > 11) { nm = 0; ny++; } ds = ny + '-' + pad(nm + 1) + '-' + pad(dnum); other = true; }
-    else { dnum = i - startDow + 1; ds = calYear + '-' + pad(calMonth + 1) + '-' + pad(dnum); }
-    var marks = dayMarks(ds).join('<br>');
-    cells += '<div class="cal-day' + (other ? ' other' : '') + (ds === todayStr() ? ' today' : '') + (ds === calSel ? ' sel' : '') + '" data-ds="' + ds + '"><div class="dn">' + dnum + '</div><span class="mk">' + marks + '</span></div>';
+  $('cal-prev').addEventListener('click', function () { shiftMonth(-1); });
+  $('cal-next').addEventListener('click', function () { shiftMonth(1); });
+  function shiftMonth(n) {
+    calMonth += n;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCal();
   }
-  $('calGrid').innerHTML = cells;
-  Array.prototype.forEach.call($('calGrid').querySelectorAll('.cal-day'), function (el) {
-    el.addEventListener('click', function () { calSel = el.getAttribute('data-ds'); renderCal(); renderDayDetail(); });
-  });
-  renderDayDetail();
-  renderMonthSummary();
-}
-function fmtNum(x, d) { return x == null || x === '' ? '—' : (d ? Number(x).toFixed(d) : String(x)); }
-function renderDayDetail() {
-  var ds = calSel, day = store.days[ds];
-  var el = $('dayDetail');
-  if (!day) { el.innerHTML = '<div class="detail"><h3>' + zhDate(ds) + '</h3><p class="hint">呢日未有記錄。</p>' + (editable(ds) ? '<p class="hint">去「今日」頁可以補填。</p>' : '') + '</div>'; return; }
-  function bowelLine(b) {
-    if (!b) return '未記錄';
-    if (!b.has) return '無';
-    var t = '有 · ' + (b.shape || '未選形狀');
-    if (b.blood) t += ' · 有血';
-    if (b.remark) t += '（' + esc(b.remark) + '）';
-    return t;
-  }
-  var s = day.status || {};
-  el.innerHTML = '<div class="detail"><h3>' + zhDate(ds) + (day.confirmed ? ' ✓ 已確認' : '') + '</h3>' +
-    '<div class="row"><span class="k">太太當日狀態</span><span>體重 ' + fmtNum(s.weight, 1) + ' kg · Protein ' + fmtNum(s.protein) + '% · Fat ' + fmtNum(s.fat) + '%</span></div>' +
-    '<div class="row"><span class="k">血壓</span><span>' + (s.sys ? fmtNum(s.sys) + ' / ' + fmtNum(s.dia) + ' mmHg' : '—') + (s.hr ? ' · 心跳 ' + fmtNum(s.hr) : '') + '</span></div>' +
-    '<div class="row"><span class="k">💫 太太頭暈</span><span>' + (day.dizzy && day.dizzy.has ? '有 · ' + (day.dizzy.severity || '未選程度') : '無') + (day.dizzy && day.dizzy.remark ? '（' + esc(day.dizzy.remark) + '）' : '') + '</span></div>' +
-    '<div class="row"><span class="k">💩 太太便便</span><span>' + bowelLine(day.wife) + '</span></div>' +
-    '<div class="row"><span class="k">👦💩 兒子便便</span><span>' + bowelLine(day.son) + '</span></div>' +
-    (editable(ds) ? '<p class="hint" style="margin-top:6px">去「今日」頁可以改呢日嘅記錄。</p>' : '<p class="hint" style="margin-top:6px">呢日已經超出補填範圍，只可查看。</p>') +
-    '</div>';
-}
-function renderMonthSummary() {
-  var y = calYear, m = calMonth;
-  var days = Object.keys(store.days).filter(function (ds) { var d = parseDS(ds); return d.getFullYear() === y && d.getMonth() === m; });
-  function sum(person, isWife) {
-    var diz = { 輕: 0, 中: 0, 重: 0, total: 0 };
-    var shape = { 香蕉: 0, 石頭: 0, 爛: 0, 其他: 0 };
-    var bowel = 0, blood = 0;
-    days.forEach(function (ds) {
-      var day = store.days[ds];
-      if (isWife && day.dizzy && day.dizzy.has) { diz.total++; if (diz[day.dizzy.severity] != null) diz[day.dizzy.severity]++; }
-      var b = day[person];
-      if (b && b.has) { bowel++; if (shape[b.shape] != null) shape[b.shape]++; if (b.blood) blood++; }
+  $('cal-filter').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    calFilter = b.getAttribute('data-f');
+    $('cal-filter').querySelectorAll('button').forEach(function (x) {
+      x.classList.toggle('on', x === b);
     });
-    return { diz: diz, shape: shape, bowel: bowel, blood: blood };
+    renderCal();
+  });
+
+  function renderDayDetail() {
+    var key = ds(selDate);
+    var rec = store.days[key];
+    var el = $('day-detail');
+    var html = '<h3>' + fmtDateFull(selDate) + '</h3>';
+    if (!rec || !rec.confirmed) {
+      html += '<div class="dd-row"><span class="k">狀態</span><span class="v">未填</span></div>';
+    } else {
+      var st = rec.status;
+      var statusTxt = [];
+      if (st.weight) statusTxt.push('體重 ' + esc(st.weight) + ' kg');
+      if (st.protein) statusTxt.push('Protein ' + esc(st.protein) + '%');
+      if (st.fat) statusTxt.push('Fat ' + esc(st.fat) + '%');
+      if (st.sys && st.dia) statusTxt.push('血壓 ' + esc(st.sys) + '/' + esc(st.dia));
+      if (st.hr) statusTxt.push('心跳 ' + esc(st.hr) + ' bpm');
+      html += '<div class="dd-row"><span class="k">太太當日狀態</span><span class="v">' + (statusTxt.length ? statusTxt.join(' · ') : '—') +
+        (st.remark ? '<span class="rm">「' + esc(st.remark) + '」</span>' : '') + '</span></div>';
+      html += '<div class="dd-row"><span class="k">太太頭暈</span><span class="v">' +
+        (rec.dizzy.has ? '有（' + esc(rec.dizzy.severity || '未選程度') + '）' : '無') +
+        (rec.dizzy.remark ? '<span class="rm">「' + esc(rec.dizzy.remark) + '」</span>' : '') + '</span></div>';
+      html += bowelRow('太太便便', rec.wife);
+      html += bowelRow('兒子便便', rec.son);
+    }
+    if (selDate <= today() && selDate >= minBackfill()) {
+      html += '<button class="goto-btn" id="goto-day">' + (sameDay(selDate, today()) ? '去今日頁填' : '去補填呢日') + '</button>';
+    } else if (selDate < minBackfill()) {
+      html += '<div class="readonly-note">只可補填今日及前 3 日，呢日只可睇。</div>';
+    }
+    el.innerHTML = html;
+    var g = $('goto-day');
+    if (g) g.addEventListener('click', function () { loadForm(); switchTab('today'); });
   }
-  var w = sum('wife', true), s = sum('son', false);
-  var ws = [], wt = 0, sys = 0, dia = 0, wn = 0, bn = 0;
-  days.forEach(function (ds) {
-    var st = store.days[ds].status || {};
-    if (st.weight !== '' && st.weight != null) { wt += Number(st.weight); wn++; }
-    if (st.sys) { sys += Number(st.sys); dia += Number(st.dia || 0); bn++; }
-  });
-  $('monthSummary').innerHTML = '<h3>本月小結（' + y + '年' + (m + 1) + '月）</h3>' +
-    '<h4>👩 太太</h4><p>頭暈 ' + w.diz.total + ' 日（輕 ' + w.diz.輕 + ' · 中 ' + w.diz.中 + ' · 重 ' + w.diz.重 + '）<br>' +
-    '便便 ' + w.bowel + ' 日（香蕉 ' + w.shape.香蕉 + ' · 石頭 ' + w.shape.石頭 + ' · 爛 ' + w.shape.爛 + ' · 其他 ' + w.shape.其他 + '；其中有血 ' + w.blood + ' 日）<br>' +
-    '平均體重 ' + (wn ? (wt / wn).toFixed(1) + ' kg' : '—') + ' · 平均血壓 ' + (bn ? Math.round(sys / bn) + ' / ' + Math.round(dia / bn) + ' mmHg' : '—') + '</p>' +
-    '<h4 class="son">👦 兒子</h4><p>便便 ' + s.bowel + ' 日（香蕉 ' + s.shape.香蕉 + ' · 石頭 ' + s.shape.石頭 + ' · 爛 ' + s.shape.爛 + ' · 其他 ' + s.shape.其他 + '；其中有血 ' + s.blood + ' 日）</p>';
-}
+  function bowelRow(label, b) {
+    var txt;
+    if (!b.has) txt = '無';
+    else {
+      txt = '有' + (b.shape ? ' · ' + esc(b.shape) : '') + (b.blood ? ' · 有血' : '');
+    }
+    return '<div class="dd-row"><span class="k">' + label + '</span><span class="v">' + txt +
+      (b.remark ? '<span class="rm">「' + esc(b.remark) + '」</span>' : '') + '</span></div>';
+  }
 
-/* ---------- dashboard ---------- */
-var dashRange = 7;
-function rangeDays(n) {
-  var out = [];
-  for (var i = n - 1; i >= 0; i--) { var ds = addDays(todayStr(), -i); if (store.days[ds]) out.push(ds); }
-  return out;
-}
-function renderDash() {
-  var days = rangeDays(dashRange);
-  var start = addDays(todayStr(), -(dashRange - 1));
-  $('weightRange').textContent = zhDate(start) + ' 至 ' + zhDate(todayStr());
-  $('bpRange').textContent = $('weightRange').textContent;
-  $('dizzyTitle').textContent = '過去 ' + dashRange + ' 日';
-  $('bowelTitle').textContent = '過去 ' + dashRange + ' 日';
-  var diz = 0, sev = { 輕: 0, 中: 0, 重: 0 }, wb = 0, sb = 0, wBlood = 0, sBlood = 0;
-  var wsum = 0, wn = 0, syss = 0, dias = 0, bn = 0;
-  var wpts = [], sysPts = [], diaPts = [];
-  days.forEach(function (ds) {
-    var d = store.days[ds];
-    if (d.dizzy && d.dizzy.has) { diz++; if (sev[d.dizzy.severity] != null) sev[d.dizzy.severity]++; }
-    if (d.wife && d.wife.has) { wb++; if (d.wife.blood) wBlood++; }
-    if (d.son && d.son.has) { sb++; if (d.son.blood) sBlood++; }
-    var st = d.status || {};
-    if (st.weight !== '' && st.weight != null) { wsum += Number(st.weight); wn++; wpts.push({ ds: ds, y: Number(st.weight) }); }
-    if (st.sys) { syss += Number(st.sys); dias += Number(st.dia || 0); bn++; sysPts.push({ ds: ds, y: Number(st.sys) }); diaPts.push({ ds: ds, y: Number(st.dia || 0) }); }
-  });
-  $('dashStats').innerHTML =
-    stat(diz + ' 日', '頭暈日數<br>輕 ' + sev.輕 + ' · 中 ' + sev.中 + ' · 重 ' + sev.重) +
-    stat(wb + ' 日', '太太便便日數<br>其中有血 ' + wBlood + ' 日') +
-    stat(sb + ' 日', '兒子便便日數<br>其中有血 ' + sBlood + ' 日') +
-    stat(wn ? (wsum / wn).toFixed(1) + ' kg' : '—', '平均體重') +
-    stat(bn ? Math.round(syss / bn) + ' / ' + Math.round(dias / bn) : '—', '平均血壓 mmHg') +
-    stat(days.length + ' 日', '有記錄日數（' + dashRange + ' 日內）');
-  $('weightChart').innerHTML = lineChart(wpts, '#0f766e', 'kg');
-  $('bpChart').innerHTML = dualChart(sysPts, diaPts);
-  var maxSev = Math.max(1, sev.輕, sev.中, sev.重);
-  $('dizzyBars').innerHTML = barRow('輕 💫', sev.輕, maxSev, '#f59e0b') + barRow('中 💫💫💫', sev.中, maxSev, '#ea580c') + barRow('重 💫💫💫💫💫', sev.重, maxSev, '#b91c1c');
-  var wShape = shapeCounts(days, 'wife'), sShape = shapeCounts(days, 'son');
-  var maxSh = Math.max(1, wShape.香蕉, wShape.石頭, wShape.爛, wShape.其他, sShape.香蕉, sShape.石頭, sShape.爛, sShape.其他);
-  $('bowelBars').innerHTML = '<div class="pill-row-label"><b>太太</b></div>' +
-    barRow('🍌 香蕉', wShape.香蕉, maxSh, '#15803d') + barRow('🪨 石頭', wShape.石頭, maxSh, '#15803d') + barRow('💦 爛', wShape.爛, maxSh, '#15803d') + barRow('🔹 其他', wShape.其他, maxSh, '#15803d') +
-    '<div class="pill-row-label"><b>兒子</b></div>' +
-    barRow('🍌 香蕉', sShape.香蕉, maxSh, '#1d4ed8') + barRow('🪨 石頭', sShape.石頭, maxSh, '#1d4ed8') + barRow('💦 爛', sShape.爛, maxSh, '#1d4ed8') + barRow('🔹 其他', sShape.其他, maxSh, '#1d4ed8');
-  renderAlerts();
-}
-function stat(v, l) { return '<div class="stat"><div class="v">' + v + '</div><div class="l">' + l + '</div></div>'; }
-function shapeCounts(days, person) {
-  var c = { 香蕉: 0, 石頭: 0, 爛: 0, 其他: 0 };
-  days.forEach(function (ds) { var b = store.days[ds][person]; if (b && b.has && c[b.shape] != null) c[b.shape]++; });
-  return c;
-}
-function barRow(label, n, max, color) {
-  var pct = max ? Math.round(n / max * 100) : 0;
-  return '<div class="bar-row"><span>' + label + '</span><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div><span>' + n + ' 日</span></div>';
-}
-function lineChart(pts, color, unit) {
-  if (pts.length < 2) return '<div class="empty">數據唔夠畫走勢圖<br>記多幾日就會見到</div>';
-  var W = 460, H = 130, P = 28;
-  var ys = pts.map(function (p) { return p.y; });
-  var lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
-  if (hi === lo) { hi += 1; lo -= 1; }
-  var X = function (i) { return P + i * (W - 2 * P) / (pts.length - 1); };
-  var Y = function (y) { return H - P - (y - lo) / (hi - lo) * (H - 2 * P); };
-  var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p.y).toFixed(1); }).join(' ');
-  var dots = pts.map(function (p, i) { return '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p.y).toFixed(1) + '" r="3.5" fill="' + color + '"/>'; }).join('');
-  return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img"><text x="' + P + '" y="14" font-size="11" fill="#6b7280">' + hi + ' ' + unit + '</text><text x="' + P + '" y="' + (H - 8) + '" font-size="11" fill="#6b7280">' + lo + ' ' + unit + '</text><path d="' + line + '" fill="none" stroke="' + color + '" stroke-width="2.5"/>' + dots +
-    '<text x="' + P + '" y="' + (H - 8) + '" font-size="11" fill="#6b7280" text-anchor="start"></text><text x="' + (W - P) + '" y="' + (H - 8) + '" font-size="11" fill="#6b7280" text-anchor="end">' + pts[pts.length - 1].ds.slice(5) + '</text></svg>';
-}
-function dualChart(sysPts, diaPts) {
-  if (sysPts.length < 2) return '<div class="empty">數據唔夠畫走勢圖<br>記多幾日就會見到</div>';
-  var W = 460, H = 130, P = 28;
-  var all = sysPts.map(function (p) { return p.y; }).concat(diaPts.map(function (p) { return p.y; }));
-  var lo = Math.min.apply(null, all) - 5, hi = Math.max.apply(null, all) + 5;
-  function line(pts) { return pts.map(function (p, i) { var x = P + i * (W - 2 * P) / (pts.length - 1); var y = H - P - (p.y - lo) / (hi - lo) * (H - 2 * P); return (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); }).join(' '); }
-  return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img"><text x="' + P + '" y="14" font-size="11" fill="#b91c1c">— 上壓</text><text x="' + (P + 70) + '" y="14" font-size="11" fill="#0f766e">— 下壓</text>' +
-    '<path d="' + line(sysPts) + '" fill="none" stroke="#b91c1c" stroke-width="2.5"/><path d="' + line(diaPts) + '" fill="none" stroke="#0f766e" stroke-width="2.5"/>' +
-    '<text x="' + (W - P) + '" y="' + (H - 8) + '" font-size="11" fill="#6b7280" text-anchor="end">' + sysPts[sysPts.length - 1].ds.slice(5) + '</text></svg>';
-}
+  function monthStats(y, m, who) {
+    var daysInMonth = new Date(y, m + 1, 0).getDate();
+    var diz = 0, bowel = 0, blood = 0, wSum = 0, wN = 0, sysSum = 0, diaSum = 0, bpN = 0;
+    for (var d = 1; d <= daysInMonth; d++) {
+      var rec = store.days[ds(new Date(y, m, d))];
+      if (!rec || !rec.confirmed) continue;
+      if (who === 'wife') {
+        if (rec.dizzy.has) diz++;
+        var w = num(rec.status.weight); if (w != null) { wSum += w; wN++; }
+        var s = num(rec.status.sys), dia = num(rec.status.dia);
+        if (s != null && dia != null) { sysSum += s; diaSum += dia; bpN++; }
+      }
+      var b = rec[who];
+      if (b && b.has) { bowel++; if (b.blood) blood++; }
+    }
+    return {
+      diz: diz, bowel: bowel, blood: blood,
+      avgW: wN ? (wSum / wN) : null,
+      avgBp: bpN ? Math.round(sysSum / bpN) + ' / ' + Math.round(diaSum / bpN) : null
+    };
+  }
+  function renderMonthSummary() {
+    var w = monthStats(calYear, calMonth, 'wife');
+    var s = monthStats(calYear, calMonth, 'son');
+    var bloodSub = function (b) { return b > 0 ? '<div class="s">其中有血 ' + b + ' 日</div>' : ''; };
+    $('month-summary').innerHTML =
+      '<div class="ms-group"><div class="ms-title"><span class="person-mark wife">太太</span>太太</div>' +
+      '<div class="month-summary">' +
+      '<div class="stat"><div class="n">' + w.diz + ' <small>日</small></div><div class="l">頭暈日數</div></div>' +
+      '<div class="stat"><div class="n">' + w.bowel + ' <small>日</small></div><div class="l">太太有便便</div>' + bloodSub(w.blood) + '</div>' +
+      '<div class="stat"><div class="n">' + (w.avgW != null ? w.avgW.toFixed(1) + ' <small>kg</small>' : '—') + '</div><div class="l">平均體重</div></div>' +
+      '<div class="stat"><div class="n">' + (w.avgBp || '—') + '</div><div class="l">平均血壓</div></div>' +
+      '</div></div>' +
+      '<div class="ms-group"><div class="ms-title"><span class="person-mark son">兒子</span>兒子</div>' +
+      '<div class="month-summary">' +
+      '<div class="stat"><div class="n">' + s.bowel + ' <small>日</small></div><div class="l">兒子有便便</div>' + bloodSub(s.blood) + '</div>' +
+      '<div class="stat"><div class="n">' + s.blood + ' <small>日</small></div><div class="l">有血日數</div></div>' +
+      '</div></div>';
+  }
 
-/* ---------- tabs / update check / init ---------- */
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(function (p) { p.classList.remove('active'); });
-  $('page-' + name).classList.add('active');
-  document.querySelectorAll('nav.tabs button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-page') === name); });
-  if (name === 'cal') renderCal();
-  if (name === 'dash') renderDash();
-  window.scrollTo(0, 0);
-}
-function checkUpdate(showResult) {
-  fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
-    var m = t.match(/APP_VERSION\s*=\s*'([^']+)'/);
-    var note = $('updNote');
-    if (m && m[1] !== APP_VERSION) {
-      note.style.display = 'block';
-      note.innerHTML = '有新版本 v' + m[1] + '（而家 v' + APP_VERSION + '）— <a href="#" id="updGo" style="color:#fff;font-weight:700">撳呢度更新</a>';
-      $('updGo').addEventListener('click', function (e) {
-        e.preventDefault();
-        if (navigator.serviceWorker) { navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }).then(function () { location.reload(); }); }
-        else location.reload();
+  // ---------- dashboard ----------
+  function rangeRecords(n) {
+    var out = [];
+    for (var i = n - 1; i >= 0; i--) {
+      var d = addDays(today(), -i);
+      out.push({ date: d, key: ds(d), rec: store.days[ds(d)] });
+    }
+    return out;
+  }
+  function lineChart(points, series, opts) {
+    // points: [{date, values:{k: number|null}}]；series: [{key, color, label}]
+    var W = 560, H = 190, padL = 44, padR = 10, padT = 14, padB = 26;
+    var all = [];
+    points.forEach(function (p) { series.forEach(function (s) { var v = p.values[s.key]; if (v != null) all.push(v); }); });
+    if (!all.length) return null;
+    var min = Math.min.apply(null, all), max = Math.max.apply(null, all);
+    if (min === max) { min -= 1; max += 1; }
+    var pad = (max - min) * 0.15; min -= pad; max += pad;
+    var x = function (i) { return padL + (points.length <= 1 ? 0 : i * (W - padL - padR) / (points.length - 1)); };
+    var y = function (v) { return padT + (1 - (v - min) / (max - min)) * (H - padT - padB); };
+    var nTicks = 4, s = '';
+    for (var t = 0; t <= nTicks; t++) {
+      var ty = padT + (H - padT - padB) * t / nTicks;
+      var tv = max - (max - min) * t / nTicks;
+      s += '<line x1="' + padL + '" y1="' + ty + '" x2="' + (W - padR) + '" y2="' + ty + '" stroke="var(--line)" stroke-width="1"/>';
+      s += '<text x="' + (padL - 6) + '" y="' + (ty + 4) + '" text-anchor="end" font-size="11" fill="var(--faint)">' + (opts.axisFmt ? opts.axisFmt(tv) : tv.toFixed(0)) + '</text>';
+    }
+    var n = points.length;
+    var firstLabel = points[0].date.getMonth() + 1 + '/' + points[0].date.getDate();
+    var lastLabel = '今日';
+    s += '<text x="' + padL + '" y="' + (H - 8) + '" text-anchor="start" font-size="11" fill="var(--faint)">' + firstLabel + '</text>';
+    s += '<text x="' + (W - padR) + '" y="' + (H - 8) + '" text-anchor="end" font-size="11" fill="var(--faint)">' + lastLabel + '</text>';
+    series.forEach(function (ser) {
+      var path = '', pts = [];
+      points.forEach(function (p, i) {
+        var v = p.values[ser.key];
+        if (v == null) return;
+        pts.push([x(i), y(v)]);
+        path += (path ? ' L ' : 'M ') + x(i).toFixed(1) + ' ' + y(v).toFixed(1);
       });
-    } else if (showResult) { note.style.display = 'block'; note.textContent = '已經係最新版本 v' + APP_VERSION + '。'; }
-  }).catch(function () { if (showResult) { var note = $('updNote'); note.style.display = 'block'; note.textContent = '檢查唔到（可能冇網絡），遲啲再試。'; } });
-}
-document.querySelectorAll('nav.tabs button').forEach(function (b) { b.addEventListener('click', function () { showPage(b.getAttribute('data-page')); }); });
-$('updBtn').addEventListener('click', function () { checkUpdate(true); });
-$('dashRange').addEventListener('click', function (e) {
-  var b = e.target.closest('.chip'); if (!b) return;
-  dashRange = +b.getAttribute('data-r');
-  Array.prototype.forEach.call($('dashRange').querySelectorAll('.chip'), function (c) { c.classList.toggle('sel', c === b); });
+      if (pts.length < 2) return;
+      s += '<path d="' + path + '" fill="none" stroke="' + ser.color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+      pts.forEach(function (p) { s += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="3" fill="' + ser.color + '"/>'; });
+    });
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">' + s + '</svg>' +
+      (series.length > 1 ? '<div style="display:flex;gap:16px;margin-top:6px;font-size:13px;color:var(--muted)">' +
+        series.map(function (ser) { return '<span><span class="dot" style="background:' + ser.color + '"></span> ' + ser.label + '</span>'; }).join('') + '</div>' : '');
+  }
+  function renderDash() {
+    var recs = rangeRecords(rangeDays);
+    var diz = 0, wb = 0, sb = 0, sev = { '輕': 0, '中': 0, '重': 0 };
+    var wPts = [], bpPts = [];
+    recs.forEach(function (r) {
+      var rec = r.rec;
+      if (!rec || !rec.confirmed) return;
+      if (rec.dizzy.has) { diz++; if (sev[rec.dizzy.severity] != null) sev[rec.dizzy.severity]++; }
+      if (rec.wife.has) wb++;
+      if (rec.son.has) sb++;
+      var w = num(rec.status.weight);
+      wPts.push({ date: r.date, values: { w: w } });
+      var s = num(rec.status.sys), dia = num(rec.status.dia);
+      bpPts.push({ date: r.date, values: { sys: s, dia: dia } });
+    });
+    $('dash-range-title').textContent = '過去 ' + rangeDays + ' 日';
+    $('weight-range-label').textContent = '過去 ' + rangeDays + ' 日';
+    $('bp-range-label').textContent = '過去 ' + rangeDays + ' 日';
+    $('stat-diz').innerHTML = diz + ' <small>日</small>';
+    $('stat-wb').innerHTML = wb + ' <small>日</small>';
+    $('stat-sb').innerHTML = sb + ' <small>日</small>';
+    $('diz-total-label').textContent = '共 ' + diz + ' 日有頭暈';
+    var wc = lineChart(wPts, [{ key: 'w', color: '#0e7569', label: '體重' }], { axisFmt: function (v) { return v.toFixed(1); } });
+    $('weight-chart').innerHTML = wc || '<div class="chart-empty">呢段時間未有體重記錄</div>';
+    var bc = lineChart(bpPts, [
+      { key: 'sys', color: '#b3352b', label: '上壓' },
+      { key: 'dia', color: '#2f5d8a', label: '下壓' }
+    ], {});
+    $('bp-chart').innerHTML = bc || '<div class="chart-empty">呢段時間未有血壓記錄</div>';
+    var maxSev = Math.max(sev['輕'], sev['中'], sev['重'], 1);
+    $('diz-sev-rows').innerHTML = SEV_LABELS.map(function (lv) {
+      var c = sev[lv];
+      var pct = diz ? Math.round(c / maxSev * 100) : 0;
+      return '<div class="sev-row"><span class="sl">' + lv + '</span><span class="bar"><i style="width:' + pct + '%"></i></span><span class="sn">' + c + ' 日</span></div>';
+    }).join('');
+  }
+  $('range-toggle').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    rangeDays = parseInt(b.getAttribute('data-r'), 10);
+    $('range-toggle').querySelectorAll('button').forEach(function (x) {
+      x.classList.toggle('on', x === b);
+    });
+    renderDash();
+  });
+
+  // ---------- 更新檢查（細版，放喺頁尾） ----------
+  function checkUpdate(showResult) {
+    var note = $('upd-note');
+    function show(html) { note.innerHTML = html; note.classList.add('show'); }
+    fetch('index.html', { cache: 'no-store' })
+      .then(function (r) { return r.text(); })
+      .then(function (t) {
+        var m = t.match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+        var latest = m ? m[1] : null;
+        if (latest && latest !== APP_VERSION) {
+          show('有新版本 ' + esc(latest) + '，<a href="#" id="upd-reload">撳呢度更新</a>');
+          var l = $('upd-reload');
+          if (l) l.addEventListener('click', function (e) { e.preventDefault(); location.reload(true); });
+        } else if (showResult) {
+          show('已經係最新版本 v' + APP_VERSION);
+        }
+      })
+      .catch(function () { if (showResult) show('暫時檢查唔到更新（離線或網絡問題）。'); });
+  }
+  $('upd-btn').addEventListener('click', function () { checkUpdate(true); });
+
+  // ---------- init ----------
+  buildDatalists();
+  loadForm();
+  renderAlerts();
+  renderCal();
   renderDash();
-});
-if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); }); }
-initToday();
-initCal();
-loadForm(todayStr());
-renderDash();
-setTimeout(function () { checkUpdate(false); }, 4000);
+  setTimeout(function () { checkUpdate(false); }, 4000);
+
+  // ---------- PWA ----------
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+})();
 </script>
 </body>
 </html>
