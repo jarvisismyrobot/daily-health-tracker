@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>每日健康記錄</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="健康記錄">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang HK","Microsoft JhengHei",sans-serif;background:#f6f4ef;color:#2b2b2b;min-height:100vh}
+  #app{max-width:520px;margin:0 auto;min-height:100vh;background:#f6f4ef;display:flex;flex-direction:column}
+  header{background:#0f766e;color:#fff;padding:14px 16px 12px}
+  header .top{display:flex;justify-content:space-between;align-items:baseline}
+  header h1{font-size:20px;letter-spacing:1px}
+  header .ver{font-size:11px;opacity:.85;white-space:nowrap}
+  header p{font-size:12px;opacity:.85;margin-top:3px}
+  .upd-btn{margin-top:8px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;font-family:inherit}
+  .upd-btn:active{background:rgba(255,255,255,.3)}
+  .upd-note{font-size:12px;margin-top:6px;color:#fef3c7;display:none}
+  main{flex:1;padding:12px 12px 84px}
+  .page{display:none}
+  .page.active{display:block}
+  .banner{border-radius:12px;padding:11px 13px;font-size:14px;line-height:1.5;margin-bottom:10px}
+  .banner.warn{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+  .banner.ok{background:#dcfce7;color:#166534;border:1px solid #86efac}
+  .banner.alert{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-weight:700}
+  .banner .sub{font-weight:400;font-size:12px;opacity:.85}
+  .card{background:#fff;border:1px solid #e5e0d5;border-radius:14px;padding:12px;margin-bottom:10px}
+  .card-head{display:flex;align-items:center;gap:8px;min-height:28px}
+  .card-head .num{font-size:14px;color:#6b7280;width:16px;flex:0 0 16px}
+  .card-head .ic{font-size:17px;width:24px;flex:0 0 24px;text-align:center}
+  .card-head .ttl{font-size:16px;font-weight:700;flex:1}
+  .card-head .state{font-size:13px;font-weight:700;color:#6b7280;background:#f3f4f6;border-radius:999px;padding:3px 9px;white-space:nowrap}
+  .card-head .state.yes{color:#166534;background:#dcfce7}
+  input[type=checkbox].big{width:24px;height:24px;flex:0 0 24px;accent-color:#0f766e;cursor:pointer}
+  .body{margin-top:10px}
+  .field{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:8px;margin-bottom:8px}
+  .field label{font-size:14px;color:#374151}
+  .field input,.field select{width:100%;padding:9px 10px;font-size:15px;border:1.5px solid #d8d2c4;border-radius:9px;background:#fff;font-family:inherit;color:#111}
+  .field input:focus{outline:2px solid #0f766e;outline-offset:0;border-color:#0f766e}
+  .field .unit{font-size:12px;color:#6b7280}
+  .hint{font-size:12px;color:#6b7280;line-height:1.5}
+  .hint.green{color:#15803d}
+  .pill-row{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px}
+  .pill{padding:8px 12px;border:1.5px solid #d8d2c4;border-radius:999px;background:#fff;font-size:14px;cursor:pointer;font-family:inherit;color:#111}
+  .pill .pi{font-size:14px}
+  .pill.sel{background:#0f766e;color:#fff;border-color:#0f766e}
+  .pill-row-label{font-size:13px;color:#374151;margin-top:8px}
+  .pill-row-label b{font-weight:700}
+  .blood-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px}
+  .blood-row .ic{font-size:16px;width:22px;text-align:center}
+  .add-note{background:none;border:none;color:#0f766e;font-size:13px;cursor:pointer;padding:6px 0 0;font-family:inherit;text-decoration:underline}
+  .note-wrap{display:none;margin-top:8px}
+  .note-wrap.open{display:block}
+  .note-wrap textarea{width:100%;min-height:56px;padding:9px 10px;font-size:14px;border:1.5px solid #d8d2c4;border-radius:9px;font-family:inherit;resize:vertical}
+  .note-wrap label{font-size:13px;color:#374151;display:block;margin-bottom:4px}
+  .datebar{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e5e0d5;border-radius:12px;padding:8px 10px;margin-bottom:10px}
+  .datebar button{background:#f3f4f6;border:1px solid #d8d2c4;border-radius:8px;padding:7px 12px;font-size:14px;cursor:pointer;font-family:inherit}
+  .datebar .d{font-size:15px;font-weight:700;text-align:center}
+  .datebar .d small{display:block;font-size:11px;color:#6b7280;font-weight:400}
+  .confirm-wrap{position:sticky;bottom:66px;z-index:5;margin-top:4px}
+  .confirm-btn{width:100%;padding:15px;background:#0f766e;color:#fff;border:none;border-radius:14px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 10px rgba(15,118,110,.35)}
+  .confirm-btn.done{background:#15803d}
+  .missing{display:none;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.7;margin-top:8px}
+  .missing.show{display:block}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .chip{padding:7px 13px;border:1.5px solid #d8d2c4;border-radius:999px;background:#fff;font-size:14px;cursor:pointer;font-family:inherit}
+  .chip.sel{background:#0f766e;color:#fff;border-color:#0f766e}
+  .cal-head{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:#6b7280;margin:6px 0 4px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal-day{background:#fff;border:1px solid #e5e0d5;border-radius:9px;min-height:56px;padding:4px 3px;cursor:pointer;text-align:center}
+  .cal-day.other{opacity:.35}
+  .cal-day.today{border-color:#0f766e;border-width:2px}
+  .cal-day.sel{background:#e6f4f2;border-color:#0f766e}
+  .cal-day .dn{font-size:13px;font-weight:700}
+  .cal-day .mk{display:block;font-size:9px;line-height:1.5;margin-top:2px;word-break:break-all}
+  .cal-day .mk .m-wife{color:#15803d}
+  .cal-day .mk .m-son{color:#1d4ed8}
+  .cal-day .mk .m-diz{color:#b45309}
+  .legend{font-size:12px;color:#6b7280;line-height:1.9;margin:8px 2px}
+  .legend b{color:#374151}
+  .detail{background:#fff;border:1px solid #e5e0d5;border-radius:14px;padding:12px;margin-top:10px;font-size:14px;line-height:1.9}
+  .detail h3{font-size:15px;margin-bottom:4px}
+  .detail .row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #eee;padding:5px 0}
+  .detail .row:last-child{border-bottom:none}
+  .detail .k{color:#6b7280}
+  .summary{background:#fff;border:1px solid #e5e0d5;border-radius:14px;padding:12px;margin-top:10px}
+  .summary h3{font-size:15px;margin-bottom:6px}
+  .summary h4{font-size:14px;margin:10px 0 4px;color:#0f766e}
+  .summary h4.son{color:#1d4ed8}
+  .summary p{font-size:13.5px;line-height:1.9}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .stat{background:#fff;border:1px solid #e5e0d5;border-radius:12px;padding:11px 12px}
+  .stat .v{font-size:21px;font-weight:700}
+  .stat .l{font-size:12px;color:#6b7280;margin-top:2px;line-height:1.5}
+  .chart-card{background:#fff;border:1px solid #e5e0d5;border-radius:14px;padding:12px;margin-bottom:10px}
+  .chart-card h3{font-size:15px;margin-bottom:2px}
+  .chart-card .sub{font-size:12px;color:#6b7280;margin-bottom:6px}
+  .chart-card svg{width:100%;height:auto;display:block}
+  .bar-row{display:grid;grid-template-columns:52px 1fr 34px;align-items:center;gap:8px;font-size:13px;margin:7px 0}
+  .bar-track{background:#f3f4f6;border-radius:999px;height:12px;overflow:hidden}
+  .bar-fill{height:100%;background:#0f766e;border-radius:999px}
+  .empty{text-align:center;color:#9ca3af;font-size:13px;line-height:1.9;padding:18px 8px}
+  nav.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:#fff;border-top:1px solid #e5e0d5;display:flex;z-index:10;padding-bottom:env(safe-area-inset-bottom)}
+  nav.tabs button{flex:1;background:none;border:none;padding:9px 4px 10px;font-size:12px;color:#6b7280;cursor:pointer;font-family:inherit}
+  nav.tabs button .ti{font-size:19px;display:block}
+  nav.tabs button.active{color:#0f766e;font-weight:700}
+  footer{font-size:11px;color:#9ca3af;text-align:center;padding:14px 0 4px;line-height:1.7}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="top"><h1>📋 每日健康記錄</h1><span class="ver">v1.0.0</span></div>
+    <p>只記低，唔評分 · 資料只存喺呢部裝置</p>
+    <button class="upd-btn" id="updBtn" type="button">檢查更新</button>
+    <div class="upd-note" id="updNote"></div>
+  </header>
+  <main>
+    <!-- ============ TODAY ============ -->
+    <section class="page active" id="page-today">
+      <div class="datebar">
+        <button type="button" id="prevDay">‹ 前一日</button>
+        <div class="d"><span id="dateLabel"></span><small id="dateSub"></small></div>
+        <button type="button" id="nextDay">後一日 ›</button>
+      </div>
+      <div id="alertBox"></div>
+      <div class="banner warn" id="remindBanner"></div>
+
+      <div class="card">
+        <div class="card-head"><span class="num">1.</span><span class="ic">⚖️</span><span class="ttl">太太當日狀態</span></div>
+        <div class="body">
+          <div class="hint green" id="defaultNote" style="display:none">已自動填入昨日數值，有變先至改。</div>
+          <div class="field"><label for="fWeight">體重</label><div style="display:flex;gap:6px;align-items:center"><input id="fWeight" inputmode="decimal" list="dlWeight" placeholder="例如 58.1" autocomplete="off"><span class="unit">kg</span></div></div>
+          <div class="field"><label for="fProtein">Protein</label><div style="display:flex;gap:6px;align-items:center"><input id="fProtein" inputmode="decimal" list="dlProtein" placeholder="%" autocomplete="off"><span class="unit">%</span></div></div>
+          <div class="field"><label for="fFat">Fat</label><div style="display:flex;gap:6px;align-items:center"><input id="fFat" inputmode="decimal" list="dlFat" placeholder="%" autocomplete="off"><span class="unit">%</span></div></div>
+          <div class="field"><label for="fSys">血壓上壓</label><div style="display:flex;gap:6px;align-items:center"><input id="fSys" inputmode="numeric" list="dlSys" placeholder="例如 121" autocomplete="off"><span class="unit">mmHg</span></div></div>
+          <div class="field"><label for="fDia">血壓下壓</label><div style="display:flex;gap:6px;align-items:center"><input id="fDia" inputmode="numeric" list="dlDia" placeholder="例如 79" autocomplete="off"><span class="unit">mmHg</span></div></div>
+          <div class="field"><label for="fHr">心跳（選填）</label><div style="display:flex;gap:6px;align-items:center"><input id="fHr" inputmode="numeric" list="dlHr" placeholder="例如 72" autocomplete="off"><span class="unit">次/分</span></div></div>
+          <button class="add-note" type="button" data-note="status">＋ 加備註</button>
+          <div class="note-wrap" id="note-status"><label for="fStatusRemark">備註（選填）</label><textarea id="fStatusRemark"></textarea></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="num">2.</span><span class="ic">💫</span><span class="ttl">太太頭暈</span><input type="checkbox" class="big" id="cDizzy" aria-label="太太頭暈"><span class="state" id="sDizzy">無</span></div>
+        <div class="body" id="bodyDizzy" style="display:none">
+          <div class="pill-row-label"><b>程度</b> · 選一</div>
+          <div class="pill-row" id="pillsDizzy">
+            <button type="button" class="pill" data-v="輕">💫 輕</button>
+            <button type="button" class="pill" data-v="中">💫💫💫 中</button>
+            <button type="button" class="pill" data-v="重">💫💫💫💫💫 重</button>
+          </div>
+          <button class="add-note" type="button" data-note="dizzy">＋ 加備註</button>
+          <div class="note-wrap" id="note-dizzy"><label for="fDizzyRemark">備註（選填）</label><textarea id="fDizzyRemark"></textarea></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="num">3.</span><span class="ic">💩</span><span class="ttl">太太便便</span><input type="checkbox" class="big" id="cWife" aria-label="太太便便"><span class="state" id="sWife">無</span></div>
+        <div class="body" id="bodyWife" style="display:none">
+          <div class="pill-row-label"><b>形狀</b> · 選一</div>
+          <div class="pill-row" id="pillsWife">
+            <button type="button" class="pill" data-v="香蕉">🍌 香蕉</button>
+            <button type="button" class="pill" data-v="石頭">🪨 石頭</button>
+            <button type="button" class="pill" data-v="爛">💦 爛</button>
+            <button type="button" class="pill" data-v="其他">🔹 其他</button>
+          </div>
+          <div class="blood-row"><span class="ic">🩸</span><label for="cWifeBlood">有血</label><input type="checkbox" class="big" id="cWifeBlood" aria-label="太太便便有血"></div>
+          <button class="add-note" type="button" data-note="wife">＋ 加備註</button>
+          <div class="note-wrap" id="note-wife"><label for="fWifeRemark">備註（選填）</label><textarea id="fWifeRemark"></textarea></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="num">4.</span><span class="ic">👦💩</span><span class="ttl">兒子便便</span><input type="checkbox" class="big" id="cSon" aria-label="兒子便便"><span class="state" id="sSon">無</span></div>
+        <div class="body" id="bodySon" style="display:none">
+          <div class="pill-row-label"><b>形狀</b> · 選一</div>
+          <div class="pill-row" id="pillsSon">
+            <button type="button" class="pill" data-v="香蕉">🍌 香蕉</button>
+            <button type="button" class="pill" data-v="石頭">🪨 石頭</button>
+            <button type="button" class="pill" data-v="爛">💦 爛</button>
+            <button type="button" class="pill" data-v="其他">🔹 其他</button>
+          </div>
+          <div class="blood-row"><span class="ic">🩸</span><label for="cSonBlood">有血</label><input type="checkbox" class="big" id="cSonBlood" aria-label="兒子便便有血"></div>
+          <button class="add-note" type="button" data-note="son">＋ 加備註</button>
+          <div class="note-wrap" id="note-son"><label for="fSonRemark">備註（選填）</label><textarea id="fSonRemark"></textarea></div>
+        </div>
+      </div>
+
+      <div class="confirm-wrap"><button class="confirm-btn" id="confirmBtn" type="button">確認記錄</button></div>
+      <div class="missing" id="missingBox"></div>
+      <footer>每日健康記錄 v1.0.0 · 資料只存喺呢部裝置，唔會上傳</footer>
+    </section>
+
+    <!-- ============ CALENDAR ============ -->
+    <section class="page" id="page-cal">
+      <div class="datebar">
+        <button type="button" id="prevMonth">‹ 上個月</button>
+        <div class="d"><span id="calLabel"></span></div>
+        <button type="button" id="nextMonth">下個月 ›</button>
+      </div>
+      <div class="chips" id="calFilter">
+        <button type="button" class="chip sel" data-f="all">全部</button>
+        <button type="button" class="chip" data-f="wife">太太</button>
+        <button type="button" class="chip" data-f="son">兒子</button>
+      </div>
+      <div class="cal-head"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="legend">
+        <b>圖例：</b>💫 頭暈 · 太便便 💩 太太便便 · 兒便便 💩 兒子便便 · 太便血 / 兒便血 💩🩸（有血係便便嘅其中一個屬性，同一個標記）<br>
+        冇便便嘅日子唔會顯示標記。撳一日睇詳情；補填只限今日同前 3 日。
+      </div>
+      <div id="dayDetail"></div>
+      <div class="summary" id="monthSummary"></div>
+    </section>
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="page" id="page-dash">
+      <div id="dashAlert"></div>
+      <div class="chips" id="dashRange">
+        <button type="button" class="chip sel" data-r="7">7日</button>
+        <button type="button" class="chip" data-r="30">30日</button>
+        <button type="button" class="chip" data-r="90">90日</button>
+        <button type="button" class="chip" data-r="180">180日</button>
+      </div>
+      <div class="stat-grid" id="dashStats"></div>
+      <div class="chart-card"><h3>⚖️ 體重走勢</h3><div class="sub" id="weightRange"></div><div id="weightChart"></div></div>
+      <div class="chart-card"><h3>🩺 血壓走勢</h3><div class="sub" id="bpRange"></div><div id="bpChart"></div></div>
+      <div class="chart-card"><h3>💫 頭暈分佈</h3><div class="sub" id="dizzyTitle"></div><div id="dizzyBars"></div></div>
+      <div class="chart-card"><h3>💩 便便形狀</h3><div class="sub" id="bowelTitle"></div><div id="bowelBars"></div></div>
+      <footer>每日健康記錄 v1.0.0 · 只記低，唔做診斷</footer>
+    </section>
+  </main>
+  <nav class="tabs">
+    <button type="button" class="active" data-page="today"><span class="ti">📝</span>今日</button>
+    <button type="button" data-page="cal"><span class="ti">📅</span>月曆</button>
+    <button type="button" data-page="dash"><span class="ti">📊</span>總覽</button>
+  </nav>
+</div>
+<datalist id="dlWeight"></datalist>
+<datalist id="dlProtein"></datalist>
+<datalist id="dlFat"></datalist>
+<datalist id="dlSys"></datalist>
+<datalist id="dlDia"></datalist>
+<datalist id="dlHr"></datalist>
+<script>
+'use strict';
+var APP_VERSION = '1.0.0';
+var LS_KEY = 'dht-v1';
+var store = { days: {} };
+try { var raw = localStorage.getItem(LS_KEY); if (raw) store = JSON.parse(raw); if (!store.days) store.days = {}; } catch (e) { store = { days: {} }; }
+function saveStore() { try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch (e) {} }
+function pad(n) { return (n < 10 ? '0' : '') + n; }
+function fmt(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function parseDS(ds) { var p = ds.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function addDays(ds, n) { var d = parseDS(ds); d.setDate(d.getDate() + n); return fmt(d); }
+function todayStr() { return fmt(new Date()); }
+function zhDate(ds) { var d = parseDS(ds); var w = ['日','一','二','三','四','五','六'][d.getDay()]; return (d.getMonth() + 1) + '月' + d.getDate() + '日（星期' + w + '）'; }
+function emptyDay() { return { status: { weight: '', protein: '', fat: '', sys: '', dia: '', hr: '', remark: '' }, dizzy: { has: false, severity: '', remark: '' }, wife: { has: false, shape: '', blood: false, remark: '' }, son: { has: false, shape: '', blood: false, remark: '' }, confirmed: false }; }
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+/* ---------- datalists: common range + previously entered values ---------- */
+var RANGES = {
+  dlWeight: { min: 40, max: 90, step: 0.5, digits: 1 },
+  dlProtein: { min: 5, max: 30, step: 1, digits: 0 },
+  dlFat: { min: 10, max: 50, step: 1, digits: 0 },
+  dlSys: { min: 90, max: 180, step: 5, digits: 0 },
+  dlDia: { min: 50, max: 120, step: 5, digits: 0 },
+  dlHr: { min: 40, max: 120, step: 5, digits: 0 }
+};
+var FIELD_OF_DL = { dlWeight: 'weight', dlProtein: 'protein', dlFat: 'fat', dlSys: 'sys', dlDia: 'dia', dlHr: 'hr' };
+function buildDatalists() {
+  Object.keys(RANGES).forEach(function (dlId) {
+    var r = RANGES[dlId], field = FIELD_OF_DL[dlId];
+    var vals = {};
+    for (var v = r.min; v <= r.max + 1e-9; v += r.step) vals[(Math.round(v * 10) / 10).toFixed(r.digits)] = true;
+    Object.keys(store.days).forEach(function (ds) {
+      var s = store.days[ds] && store.days[ds].status;
+      if (s && s[field] !== '' && s[field] != null) vals[String(s[field])] = true;
+    });
+    var list = Object.keys(vals).map(Number).sort(function (a, b) { return a - b; });
+    var dl = $(dlId);
+    dl.innerHTML = list.map(function (x) { return '<option value="' + (r.digits ? x.toFixed(r.digits) : x) + '">'; }).join('');
+  });
+}
+
+/* ---------- today form state ---------- */
+var selDate = todayStr();
+var draft = emptyDay();
+var defaultsApplied = false;
+var confirmedToday = false;
+
+function editable(ds) { var t = todayStr(); return ds <= t && ds >= addDays(t, -3); }
+function loadForm(ds) {
+  selDate = ds;
+  var saved = store.days[ds];
+  if (saved) { draft = clone(saved); confirmedToday = !!saved.confirmed; defaultsApplied = false; }
+  else {
+    draft = emptyDay(); confirmedToday = false; defaultsApplied = false;
+    var y = store.days[addDays(ds, -1)];
+    if (y && y.status) {
+      var any = false;
+      ['weight', 'protein', 'fat', 'sys', 'dia', 'hr'].forEach(function (k) { if (y.status[k] !== '' && y.status[k] != null) { draft.status[k] = y.status[k]; any = true; } });
+      defaultsApplied = any;
+    }
+  }
+  renderForm();
+}
+function readDraftFromInputs() {
+  draft.status.weight = $('fWeight').value.trim();
+  draft.status.protein = $('fProtein').value.trim();
+  draft.status.fat = $('fFat').value.trim();
+  draft.status.sys = $('fSys').value.trim();
+  draft.status.dia = $('fDia').value.trim();
+  draft.status.hr = $('fHr').value.trim();
+  draft.status.remark = $('fStatusRemark').value;
+  draft.dizzy.has = $('cDizzy').checked;
+  draft.dizzy.remark = $('fDizzyRemark').value;
+  draft.wife.has = $('cWife').checked;
+  draft.wife.blood = $('cWifeBlood').checked;
+  draft.wife.remark = $('fWifeRemark').value;
+  draft.son.has = $('cSon').checked;
+  draft.son.blood = $('cSonBlood').checked;
+  draft.son.remark = $('fSonRemark').value;
+}
+function renderForm() {
+  var isToday = selDate === todayStr();
+  $('dateLabel').textContent = zhDate(selDate);
+  $('dateSub').textContent = isToday ? '今日' : (editable(selDate) ? '可補填' : '只可查看');
+  $('prevDay').disabled = !editable(addDays(selDate, -1)) && addDays(selDate, -1) < addDays(todayStr(), -3);
+  $('nextDay').disabled = selDate >= todayStr();
+  $('fWeight').value = draft.status.weight || '';
+  $('fProtein').value = draft.status.protein || '';
+  $('fFat').value = draft.status.fat || '';
+  $('fSys').value = draft.status.sys || '';
+  $('fDia').value = draft.status.dia || '';
+  $('fHr').value = draft.status.hr || '';
+  $('fStatusRemark').value = draft.status.remark || '';
+  $('defaultNote').style.display = defaultsApplied ? 'block' : 'none';
+  setCheck('cDizzy', 'sDizzy', 'bodyDizzy', draft.dizzy.has);
+  setPills('pillsDizzy', draft.dizzy.severity);
+  $('fDizzyRemark').value = draft.dizzy.remark || '';
+  setCheck('cWife', 'sWife', 'bodyWife', draft.wife.has);
+  setPills('pillsWife', draft.wife.shape);
+  $('cWifeBlood').checked = !!draft.wife.blood;
+  $('fWifeRemark').value = draft.wife.remark || '';
+  setCheck('cSon', 'sSon', 'bodySon', draft.son.has);
+  setPills('pillsSon', draft.son.shape);
+  $('cSonBlood').checked = !!draft.son.blood;
+  $('fSonRemark').value = draft.son.remark || '';
+  ['status', 'dizzy', 'wife', 'son'].forEach(function (k) {
+    var w = $('note-' + k);
+    var ta = w.querySelector('textarea');
+    w.classList.toggle('open', !!(ta && ta.value));
+  });
+  renderBanner();
+  renderConfirm();
+  renderAlerts();
+  buildDatalists();
+}
+function setCheck(cid, sid, bid, has) {
+  $(cid).checked = !!has;
+  $(sid).textContent = has ? '有' : '無';
+  $(sid).classList.toggle('yes', !!has);
+  $(bid).style.display = has ? 'block' : 'none';
+}
+function setPills(rowId, val) {
+  Array.prototype.forEach.call($(rowId).querySelectorAll('.pill'), function (p) { p.classList.toggle('sel', p.getAttribute('data-v') === val); });
+}
+function getPill(rowId) { var s = $(rowId).querySelector('.pill.sel'); return s ? s.getAttribute('data-v') : ''; }
+function cardsReady() {
+  var n = 0;
+  if (draft.status.weight !== '') n++;
+  if (draft.dizzy.has) n++;
+  if (draft.wife.has) n++;
+  if (draft.son.has) n++;
+  return n;
+}
+function renderBanner() {
+  var b = $('remindBanner');
+  var n = cardsReady();
+  if (draft.confirmed) { b.className = 'banner ok'; b.textContent = '今日已確認 ✓（4/4）'; }
+  else {
+    b.className = 'banner warn';
+    b.textContent = (selDate === todayStr() ? '今日未填齊（' + n + '/4）' : zhDate(selDate) + '未確認（' + n + '/4）') + ' — 記低先撳「確認記錄」。';
+  }
+}
+function renderConfirm() {
+  var btn = $('confirmBtn');
+  var canEdit = editable(selDate);
+  btn.style.display = canEdit ? 'block' : 'none';
+  if (!canEdit) return;
+  if (draft.confirmed) { btn.textContent = '已確認 ✓'; btn.classList.add('done'); }
+  else { btn.textContent = '確認記錄'; btn.classList.remove('done'); }
+}
+function onEdit() {
+  if (draft.confirmed) { draft.confirmed = false; confirmedToday = false; }
+  defaultsApplied = false;
+  renderBanner();
+  renderConfirm();
+  $('missingBox').classList.remove('show');
+}
+function bindPills(rowId, apply) {
+  $(rowId).addEventListener('click', function (e) {
+    var t = e.target.closest('.pill'); if (!t) return;
+    apply(t.getAttribute('data-v'));
+    onEdit();
+  });
+}
+function initToday() {
+  ['fWeight', 'fProtein', 'fFat', 'fSys', 'fDia', 'fHr', 'fStatusRemark', 'fDizzyRemark', 'fWifeRemark', 'fSonRemark'].forEach(function (id) {
+    $(id).addEventListener('input', function () { readDraftFromInputs(); onEdit(); });
+  });
+  $('cDizzy').addEventListener('change', function () { readDraftFromInputs(); if (!draft.dizzy.has) draft.dizzy.severity = ''; setCheck('cDizzy', 'sDizzy', 'bodyDizzy', draft.dizzy.has); setPills('pillsDizzy', draft.dizzy.severity); onEdit(); });
+  $('cWife').addEventListener('change', function () { readDraftFromInputs(); if (!draft.wife.has) { draft.wife.shape = ''; draft.wife.blood = false; $('cWifeBlood').checked = false; } setCheck('cWife', 'sWife', 'bodyWife', draft.wife.has); setPills('pillsWife', draft.wife.shape); onEdit(); });
+  $('cSon').addEventListener('change', function () { readDraftFromInputs(); if (!draft.son.has) { draft.son.shape = ''; draft.son.blood = false; $('cSonBlood').checked = false; } setCheck('cSon', 'sSon', 'bodySon', draft.son.has); setPills('pillsSon', draft.son.shape); onEdit(); });
+  $('cWifeBlood').addEventListener('change', function () { readDraftFromInputs(); onEdit(); });
+  $('cSonBlood').addEventListener('change', function () { readDraftFromInputs(); onEdit(); });
+  bindPills('pillsDizzy', function (v) { draft.dizzy.severity = v; setPills('pillsDizzy', v); });
+  bindPills('pillsWife', function (v) { draft.wife.shape = v; setPills('pillsWife', v); });
+  bindPills('pillsSon', function (v) { draft.son.shape = v; setPills('pillsSon', v); });
+  document.querySelectorAll('.add-note').forEach(function (b) {
+    b.addEventListener('click', function () { var w = $('note-' + b.getAttribute('data-note')); w.classList.toggle('open'); if (w.classList.contains('open')) w.querySelector('textarea').focus(); });
+  });
+  $('prevDay').addEventListener('click', function () { var d = addDays(selDate, -1); if (d >= addDays(todayStr(), -3)) loadForm(d); });
+  $('nextDay').addEventListener('click', function () { var d = addDays(selDate, 1); if (d <= todayStr()) loadForm(d); });
+  $('confirmBtn').addEventListener('click', function () {
+    readDraftFromInputs();
+    draft.dizzy.severity = getPill('pillsDizzy');
+    draft.wife.shape = getPill('pillsWife');
+    draft.son.shape = getPill('pillsSon');
+    var missing = [];
+    if (draft.dizzy.has && !draft.dizzy.severity) missing.push('太太頭暈：程度未選');
+    if (draft.wife.has && !draft.wife.shape) missing.push('太太便便：形狀未選');
+    if (draft.son.has && !draft.son.shape) missing.push('兒子便便：形狀未選');
+    var box = $('missingBox');
+    if (missing.length) {
+      box.innerHTML = '仲差以下項目：<br>• ' + missing.join('<br>• ');
+      box.classList.add('show');
+      return;
+    }
+    box.classList.remove('show');
+    draft.confirmed = true;
+    store.days[selDate] = clone(draft);
+    saveStore();
+    confirmedToday = true;
+    renderBanner();
+    renderConfirm();
+    renderAlerts();
+    buildDatalists();
+  });
+}
+
+/* ---------- bowel alert: 3 consecutive days explicitly recorded 無便便 ---------- */
+function bowelStreak(person) {
+  var latest = null;
+  var ds = todayStr();
+  for (var i = 0; i < 60; i++) { var d = addDays(ds, -i); if (store.days[d]) { latest = d; break; } }
+  if (!latest) return 0;
+  var n = 0, d = latest;
+  for (var j = 0; j < 30; j++) {
+    var day = store.days[d];
+    if (!day) break;
+    if (day[person] && day[person].has === false) { n++; d = addDays(d, -1); }
+    else break;
+  }
+  return n;
+}
+function renderAlerts() {
+  var w = bowelStreak('wife'), s = bowelStreak('son');
+  var html = '';
+  if (w >= 3) html += '<div class="banner alert">⚠️ 太太已經連續 ' + w + ' 日無便便</div>';
+  if (s >= 3) html += '<div class="banner alert">⚠️ 兒子已經連續 ' + s + ' 日無便便</div>';
+  $('alertBox').innerHTML = html;
+  var da = $('dashAlert');
+  if (da) da.innerHTML = html;
+}
+
+/* ---------- calendar ---------- */
+var calYear, calMonth, calFilter = 'all', calSel = null;
+function initCal() {
+  var t = new Date(); calYear = t.getFullYear(); calMonth = t.getMonth(); calSel = todayStr();
+  $('prevMonth').addEventListener('click', function () { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCal(); });
+  $('nextMonth').addEventListener('click', function () { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCal(); });
+  $('calFilter').addEventListener('click', function (e) {
+    var b = e.target.closest('.chip'); if (!b) return;
+    calFilter = b.getAttribute('data-f');
+    Array.prototype.forEach.call($('calFilter').querySelectorAll('.chip'), function (c) { c.classList.toggle('sel', c === b); });
+    renderCal();
+  });
+  renderCal();
+}
+function dayMarks(ds) {
+  var day = store.days[ds];
+  var out = [];
+  if (!day) return out;
+  if (calFilter !== 'son' && day.dizzy && day.dizzy.has) out.push('<span class="m-diz">💫</span>');
+  if (calFilter !== 'son' && day.wife && day.wife.has) out.push('<span class="m-wife">太' + (day.wife.blood ? '便血 💩🩸' : '便便 💩') + '</span>');
+  if (calFilter !== 'wife' && day.son && day.son.has) out.push('<span class="m-son">兒' + (day.son.blood ? '便血 💩🩸' : '便便 💩') + '</span>');
+  return out;
+}
+function renderCal() {
+  $('calLabel').textContent = calYear + '年' + (calMonth + 1) + '月';
+  var first = new Date(calYear, calMonth, 1);
+  var startDow = (first.getDay() + 6) % 7; // Monday first
+  var daysIn = new Date(calYear, calMonth + 1, 0).getDate();
+  var prevDays = new Date(calYear, calMonth, 0).getDate();
+  var cells = '';
+  for (var i = 0; i < 42; i++) {
+    var dnum, ds, other = false;
+    if (i < startDow) { dnum = prevDays - startDow + 1 + i; var pm = calMonth - 1, py = calYear; if (pm < 0) { pm = 11; py--; } ds = py + '-' + pad(pm + 1) + '-' + pad(dnum); other = true; }
+    else if (i >= startDow + daysIn) { dnum = i - startDow - daysIn + 1; var nm = calMonth + 1, ny = calYear; if (nm > 11) { nm = 0; ny++; } ds = ny + '-' + pad(nm + 1) + '-' + pad(dnum); other = true; }
+    else { dnum = i - startDow + 1; ds = calYear + '-' + pad(calMonth + 1) + '-' + pad(dnum); }
+    var marks = dayMarks(ds).join('<br>');
+    cells += '<div class="cal-day' + (other ? ' other' : '') + (ds === todayStr() ? ' today' : '') + (ds === calSel ? ' sel' : '') + '" data-ds="' + ds + '"><div class="dn">' + dnum + '</div><span class="mk">' + marks + '</span></div>';
+  }
+  $('calGrid').innerHTML = cells;
+  Array.prototype.forEach.call($('calGrid').querySelectorAll('.cal-day'), function (el) {
+    el.addEventListener('click', function () { calSel = el.getAttribute('data-ds'); renderCal(); renderDayDetail(); });
+  });
+  renderDayDetail();
+  renderMonthSummary();
+}
+function fmtNum(x, d) { return x == null || x === '' ? '—' : (d ? Number(x).toFixed(d) : String(x)); }
+function renderDayDetail() {
+  var ds = calSel, day = store.days[ds];
+  var el = $('dayDetail');
+  if (!day) { el.innerHTML = '<div class="detail"><h3>' + zhDate(ds) + '</h3><p class="hint">呢日未有記錄。</p>' + (editable(ds) ? '<p class="hint">去「今日」頁可以補填。</p>' : '') + '</div>'; return; }
+  function bowelLine(b) {
+    if (!b) return '未記錄';
+    if (!b.has) return '無';
+    var t = '有 · ' + (b.shape || '未選形狀');
+    if (b.blood) t += ' · 有血';
+    if (b.remark) t += '（' + esc(b.remark) + '）';
+    return t;
+  }
+  var s = day.status || {};
+  el.innerHTML = '<div class="detail"><h3>' + zhDate(ds) + (day.confirmed ? ' ✓ 已確認' : '') + '</h3>' +
+    '<div class="row"><span class="k">太太當日狀態</span><span>體重 ' + fmtNum(s.weight, 1) + ' kg · Protein ' + fmtNum(s.protein) + '% · Fat ' + fmtNum(s.fat) + '%</span></div>' +
+    '<div class="row"><span class="k">血壓</span><span>' + (s.sys ? fmtNum(s.sys) + ' / ' + fmtNum(s.dia) + ' mmHg' : '—') + (s.hr ? ' · 心跳 ' + fmtNum(s.hr) : '') + '</span></div>' +
+    '<div class="row"><span class="k">💫 太太頭暈</span><span>' + (day.dizzy && day.dizzy.has ? '有 · ' + (day.dizzy.severity || '未選程度') : '無') + (day.dizzy && day.dizzy.remark ? '（' + esc(day.dizzy.remark) + '）' : '') + '</span></div>' +
+    '<div class="row"><span class="k">💩 太太便便</span><span>' + bowelLine(day.wife) + '</span></div>' +
+    '<div class="row"><span class="k">👦💩 兒子便便</span><span>' + bowelLine(day.son) + '</span></div>' +
+    (editable(ds) ? '<p class="hint" style="margin-top:6px">去「今日」頁可以改呢日嘅記錄。</p>' : '<p class="hint" style="margin-top:6px">呢日已經超出補填範圍，只可查看。</p>') +
+    '</div>';
+}
+function renderMonthSummary() {
+  var y = calYear, m = calMonth;
+  var days = Object.keys(store.days).filter(function (ds) { var d = parseDS(ds); return d.getFullYear() === y && d.getMonth() === m; });
+  function sum(person, isWife) {
+    var diz = { 輕: 0, 中: 0, 重: 0, total: 0 };
+    var shape = { 香蕉: 0, 石頭: 0, 爛: 0, 其他: 0 };
+    var bowel = 0, blood = 0;
+    days.forEach(function (ds) {
+      var day = store.days[ds];
+      if (isWife && day.dizzy && day.dizzy.has) { diz.total++; if (diz[day.dizzy.severity] != null) diz[day.dizzy.severity]++; }
+      var b = day[person];
+      if (b && b.has) { bowel++; if (shape[b.shape] != null) shape[b.shape]++; if (b.blood) blood++; }
+    });
+    return { diz: diz, shape: shape, bowel: bowel, blood: blood };
+  }
+  var w = sum('wife', true), s = sum('son', false);
+  var ws = [], wt = 0, sys = 0, dia = 0, wn = 0, bn = 0;
+  days.forEach(function (ds) {
+    var st = store.days[ds].status || {};
+    if (st.weight !== '' && st.weight != null) { wt += Number(st.weight); wn++; }
+    if (st.sys) { sys += Number(st.sys); dia += Number(st.dia || 0); bn++; }
+  });
+  $('monthSummary').innerHTML = '<h3>本月小結（' + y + '年' + (m + 1) + '月）</h3>' +
+    '<h4>👩 太太</h4><p>頭暈 ' + w.diz.total + ' 日（輕 ' + w.diz.輕 + ' · 中 ' + w.diz.中 + ' · 重 ' + w.diz.重 + '）<br>' +
+    '便便 ' + w.bowel + ' 日（香蕉 ' + w.shape.香蕉 + ' · 石頭 ' + w.shape.石頭 + ' · 爛 ' + w.shape.爛 + ' · 其他 ' + w.shape.其他 + '；其中有血 ' + w.blood + ' 日）<br>' +
+    '平均體重 ' + (wn ? (wt / wn).toFixed(1) + ' kg' : '—') + ' · 平均血壓 ' + (bn ? Math.round(sys / bn) + ' / ' + Math.round(dia / bn) + ' mmHg' : '—') + '</p>' +
+    '<h4 class="son">👦 兒子</h4><p>便便 ' + s.bowel + ' 日（香蕉 ' + s.shape.香蕉 + ' · 石頭 ' + s.shape.石頭 + ' · 爛 ' + s.shape.爛 + ' · 其他 ' + s.shape.其他 + '；其中有血 ' + s.blood + ' 日）</p>';
+}
+
+/* ---------- dashboard ---------- */
+var dashRange = 7;
+function rangeDays(n) {
+  var out = [];
+  for (var i = n - 1; i >= 0; i--) { var ds = addDays(todayStr(), -i); if (store.days[ds]) out.push(ds); }
+  return out;
+}
+function renderDash() {
+  var days = rangeDays(dashRange);
+  var start = addDays(todayStr(), -(dashRange - 1));
+  $('weightRange').textContent = zhDate(start) + ' 至 ' + zhDate(todayStr());
+  $('bpRange').textContent = $('weightRange').textContent;
+  $('dizzyTitle').textContent = '過去 ' + dashRange + ' 日';
+  $('bowelTitle').textContent = '過去 ' + dashRange + ' 日';
+  var diz = 0, sev = { 輕: 0, 中: 0, 重: 0 }, wb = 0, sb = 0, wBlood = 0, sBlood = 0;
+  var wsum = 0, wn = 0, syss = 0, dias = 0, bn = 0;
+  var wpts = [], sysPts = [], diaPts = [];
+  days.forEach(function (ds) {
+    var d = store.days[ds];
+    if (d.dizzy && d.dizzy.has) { diz++; if (sev[d.dizzy.severity] != null) sev[d.dizzy.severity]++; }
+    if (d.wife && d.wife.has) { wb++; if (d.wife.blood) wBlood++; }
+    if (d.son && d.son.has) { sb++; if (d.son.blood) sBlood++; }
+    var st = d.status || {};
+    if (st.weight !== '' && st.weight != null) { wsum += Number(st.weight); wn++; wpts.push({ ds: ds, y: Number(st.weight) }); }
+    if (st.sys) { syss += Number(st.sys); dias += Number(st.dia || 0); bn++; sysPts.push({ ds: ds, y: Number(st.sys) }); diaPts.push({ ds: ds, y: Number(st.dia || 0) }); }
+  });
+  $('dashStats').innerHTML =
+    stat(diz + ' 日', '頭暈日數<br>輕 ' + sev.輕 + ' · 中 ' + sev.中 + ' · 重 ' + sev.重) +
+    stat(wb + ' 日', '太太便便日數<br>其中有血 ' + wBlood + ' 日') +
+    stat(sb + ' 日', '兒子便便日數<br>其中有血 ' + sBlood + ' 日') +
+    stat(wn ? (wsum / wn).toFixed(1) + ' kg' : '—', '平均體重') +
+    stat(bn ? Math.round(syss / bn) + ' / ' + Math.round(dias / bn) : '—', '平均血壓 mmHg') +
+    stat(days.length + ' 日', '有記錄日數（' + dashRange + ' 日內）');
+  $('weightChart').innerHTML = lineChart(wpts, '#0f766e', 'kg');
+  $('bpChart').innerHTML = dualChart(sysPts, diaPts);
+  var maxSev = Math.max(1, sev.輕, sev.中, sev.重);
+  $('dizzyBars').innerHTML = barRow('輕 💫', sev.輕, maxSev, '#f59e0b') + barRow('中 💫💫💫', sev.中, maxSev, '#ea580c') + barRow('重 💫💫💫💫💫', sev.重, maxSev, '#b91c1c');
+  var wShape = shapeCounts(days, 'wife'), sShape = shapeCounts(days, 'son');
+  var maxSh = Math.max(1, wShape.香蕉, wShape.石頭, wShape.爛, wShape.其他, sShape.香蕉, sShape.石頭, sShape.爛, sShape.其他);
+  $('bowelBars').innerHTML = '<div class="pill-row-label"><b>太太</b></div>' +
+    barRow('🍌 香蕉', wShape.香蕉, maxSh, '#15803d') + barRow('🪨 石頭', wShape.石頭, maxSh, '#15803d') + barRow('💦 爛', wShape.爛, maxSh, '#15803d') + barRow('🔹 其他', wShape.其他, maxSh, '#15803d') +
+    '<div class="pill-row-label"><b>兒子</b></div>' +
+    barRow('🍌 香蕉', sShape.香蕉, maxSh, '#1d4ed8') + barRow('🪨 石頭', sShape.石頭, maxSh, '#1d4ed8') + barRow('💦 爛', sShape.爛, maxSh, '#1d4ed8') + barRow('🔹 其他', sShape.其他, maxSh, '#1d4ed8');
+  renderAlerts();
+}
+function stat(v, l) { return '<div class="stat"><div class="v">' + v + '</div><div class="l">' + l + '</div></div>'; }
+function shapeCounts(days, person) {
+  var c = { 香蕉: 0, 石頭: 0, 爛: 0, 其他: 0 };
+  days.forEach(function (ds) { var b = store.days[ds][person]; if (b && b.has && c[b.shape] != null) c[b.shape]++; });
+  return c;
+}
+function barRow(label, n, max, color) {
+  var pct = max ? Math.round(n / max * 100) : 0;
+  return '<div class="bar-row"><span>' + label + '</span><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div><span>' + n + ' 日</span></div>';
+}
+function lineChart(pts, color, unit) {
+  if (pts.length < 2) return '<div class="empty">數據唔夠畫走勢圖<br>記多幾日就會見到</div>';
+  var W = 460, H = 130, P = 28;
+  var ys = pts.map(function (p) { return p.y; });
+  var lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
+  if (hi === lo) { hi += 1; lo -= 1; }
+  var X = function (i) { return P + i * (W - 2 * P) / (pts.length - 1); };
+  var Y = function (y) { return H - P - (y - lo) / (hi - lo) * (H - 2 * P); };
+  var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p.y).toFixed(1); }).join(' ');
+  var dots = pts.map(function (p, i) { return '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p.y).toFixed(1) + '" r="3.5" fill="' + color + '"/>'; }).join('');
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img"><text x="' + P + '" y="14" font-size="11" fill="#6b7280">' + hi + ' ' + unit + '</text><text x="' + P + '" y="' + (H - 8) + '" font-size="11" fill="#6b7280">' + lo + ' ' + unit + '</text><path d="' + line + '" fill="none" stroke="' + color + '" stroke-width="2.5"/>' + dots +
+    '<text x="' + P + '" y="' + (H - 8) + '" font-size="11" fill="#6b7280" text-anchor="start"></text><text x="' + (W - P) + '" y="' + (H - 8) + '" font-size="11" fill="#6b7280" text-anchor="end">' + pts[pts.length - 1].ds.slice(5) + '</text></svg>';
+}
+function dualChart(sysPts, diaPts) {
+  if (sysPts.length < 2) return '<div class="empty">數據唔夠畫走勢圖<br>記多幾日就會見到</div>';
+  var W = 460, H = 130, P = 28;
+  var all = sysPts.map(function (p) { return p.y; }).concat(diaPts.map(function (p) { return p.y; }));
+  var lo = Math.min.apply(null, all) - 5, hi = Math.max.apply(null, all) + 5;
+  function line(pts) { return pts.map(function (p, i) { var x = P + i * (W - 2 * P) / (pts.length - 1); var y = H - P - (p.y - lo) / (hi - lo) * (H - 2 * P); return (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); }).join(' '); }
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img"><text x="' + P + '" y="14" font-size="11" fill="#b91c1c">— 上壓</text><text x="' + (P + 70) + '" y="14" font-size="11" fill="#0f766e">— 下壓</text>' +
+    '<path d="' + line(sysPts) + '" fill="none" stroke="#b91c1c" stroke-width="2.5"/><path d="' + line(diaPts) + '" fill="none" stroke="#0f766e" stroke-width="2.5"/>' +
+    '<text x="' + (W - P) + '" y="' + (H - 8) + '" font-size="11" fill="#6b7280" text-anchor="end">' + sysPts[sysPts.length - 1].ds.slice(5) + '</text></svg>';
+}
+
+/* ---------- tabs / update check / init ---------- */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(function (p) { p.classList.remove('active'); });
+  $('page-' + name).classList.add('active');
+  document.querySelectorAll('nav.tabs button').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-page') === name); });
+  if (name === 'cal') renderCal();
+  if (name === 'dash') renderDash();
+  window.scrollTo(0, 0);
+}
+function checkUpdate(showResult) {
+  fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+    var m = t.match(/APP_VERSION\s*=\s*'([^']+)'/);
+    var note = $('updNote');
+    if (m && m[1] !== APP_VERSION) {
+      note.style.display = 'block';
+      note.innerHTML = '有新版本 v' + m[1] + '（而家 v' + APP_VERSION + '）— <a href="#" id="updGo" style="color:#fff;font-weight:700">撳呢度更新</a>';
+      $('updGo').addEventListener('click', function (e) {
+        e.preventDefault();
+        if (navigator.serviceWorker) { navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }).then(function () { location.reload(); }); }
+        else location.reload();
+      });
+    } else if (showResult) { note.style.display = 'block'; note.textContent = '已經係最新版本 v' + APP_VERSION + '。'; }
+  }).catch(function () { if (showResult) { var note = $('updNote'); note.style.display = 'block'; note.textContent = '檢查唔到（可能冇網絡），遲啲再試。'; } });
+}
+document.querySelectorAll('nav.tabs button').forEach(function (b) { b.addEventListener('click', function () { showPage(b.getAttribute('data-page')); }); });
+$('updBtn').addEventListener('click', function () { checkUpdate(true); });
+$('dashRange').addEventListener('click', function (e) {
+  var b = e.target.closest('.chip'); if (!b) return;
+  dashRange = +b.getAttribute('data-r');
+  Array.prototype.forEach.call($('dashRange').querySelectorAll('.chip'), function (c) { c.classList.toggle('sel', c === b); });
+  renderDash();
+});
+if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); }); }
+initToday();
+initCal();
+loadForm(todayStr());
+renderDash();
+setTimeout(function () { checkUpdate(false); }, 4000);
+</script>
+</body>
+</html>
