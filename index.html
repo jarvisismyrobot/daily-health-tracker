@@ -528,7 +528,7 @@
       <div class="submit-msg" id="submit-msg"></div>
     </div>
     <div class="foot-note">只作記錄之用 · 可補填今日及前 3 日</div>
-    <div class="ver-line">v1.0.4 · <button type="button" id="upd-btn">檢查更新</button></div>
+    <div class="ver-line">v1.0.5 · <button type="button" id="upd-btn">檢查更新</button></div>
     <div class="upd-note" id="upd-note"></div>
 
     <datalist id="dl-weight"></datalist>
@@ -630,7 +630,7 @@
 <script>
 (function () {
   'use strict';
-  var APP_VERSION = '1.0.4';
+  var APP_VERSION = '1.0.5';
   var LS_KEY = 'dht-v1';
   var LS_UPDATE_KEY = 'dht-last-update-check';
   var $ = function (id) { return document.getElementById(id); };
@@ -741,14 +741,18 @@
     return n;
   }
 
-  // ---------- 提示：連續 3 日冇便便 ----------
+  // ---------- 提示：連續 3 日冇便便（v1.0.5：未填嘅日子都當冇便便計）----------
   function noBowelStreak(who) {
-    var c = 0, d = addDays(today(), -1);
+    var keys = Object.keys(store.days);
+    if (!keys.length) return 0; // 全新安裝、乜都未填過：唔響
+    var earliest = keys.sort()[0]; // 最早有記錄嗰日，唔會再數落去
+    var c = 0, d = addDays(today(), -1); // 由尋日開始數，今日永遠唔計
     for (var i = 0; i < 30; i++) {
-      var rec = store.days[ds(d)];
-      if (!rec) break; // 未填嘅日子唔計
-      if (rec[who].has) break;
-      c++;
+      var k = ds(d);
+      if (k < earliest) break;
+      var rec = store.days[k];
+      if (rec && rec.confirmed && rec[who] && rec[who].has) break; // 有便便（已確認）就斷
+      c++; // 未填，或者填咗冇，都當冇便便
       d = addDays(d, -1);
     }
     return c;
@@ -763,7 +767,7 @@
   var SVG_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
   function alertHTML(a) {
     return '<div class="banner alert">' + SVG_ALERT + '<div><div class="bt">' + a.label + '已經連續 ' + a.n + ' 日冇便便</div>' +
-      '<div class="bs">呢個提示只按你填咗「冇」嘅日子計，未填嘅日子唔會計。</div></div></div>';
+      '<div class="bs">未填寫嘅日子都當冇便便計。</div></div></div>';
   }
   function renderAlerts() {
     var html = currentAlerts().map(alertHTML).join('');
