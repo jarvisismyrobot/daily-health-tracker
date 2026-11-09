@@ -160,6 +160,10 @@
   }
   .inherit-note.show { display: block; }
   .remark label span { color: var(--faint); font-weight: 400; }
+  /* 每格逐格儲存（v1.0.7）：格底顯示儲存狀態 */
+  .saved-note { display: none; margin-top: 8px; font-size: 12.5px; color: var(--faint); text-align: right; }
+  .saved-note.show { display: block; }
+  .saved-note.auto { color: var(--amber); }
 
   /* 有 / 無：得一個 checkbox — 剔咗 = 有，唔剔 = 無 */
   .check-row {
@@ -243,15 +247,7 @@
   .chips button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
   @media (prefers-color-scheme: dark) { .chips button.on { color: #0c1512; } }
 
-  /* 最底確認掣 */
-  .submit-zone { margin: 2px 0 10px; }
-  .submit-btn {
-    width: 100%; padding: 15px; border: none; border-radius: 14px; cursor: pointer;
-    background: var(--accent); color: #fff; font-size: 17px; font-weight: 900; letter-spacing: .02em;
-    box-shadow: var(--shadow);
-  }
-  @media (prefers-color-scheme: dark) { .submit-btn { color: #0c1512; } }
-  .submit-btn.confirmed { background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent); box-shadow: none; }
+  /* v1.0.7：確認掣已拎走，改做逐格儲存；下面嘅 CSS 留返畀其他訊息用 */
   .submit-msg { display: none; margin-top: 9px; font-size: 14px; font-weight: 700; border-radius: 10px; padding: 8px 12px; }
   .submit-msg.show { display: block; }
   .submit-msg.err { background: var(--amber-soft); color: var(--ink); }
@@ -430,12 +426,29 @@
         <label for="r-status">備註 <span>（選填）</span></label>
         <textarea id="r-status" rows="1" placeholder="例如：今朝未食早餐就量"></textarea>
       </div>
+      <div class="saved-note" id="saved-status"></div>
     </div>
 
-    <!-- 2. 太太頭暈 -->
+    <!-- 2. 太太食藥 -->
+    <div class="card" id="card-meds">
+      <label class="check-row main-row" id="row-meds">
+        <span class="num">2</span>
+        <span class="ico">💊</span>
+        <span class="check-text"><strong>太太食藥</strong></span>
+        <input type="checkbox" id="chk-meds">
+        <span class="check-state" id="state-meds">未食</span>
+      </label>
+      <div class="remark">
+        <label for="r-meds">備註 <span>（選填）</span></label>
+        <textarea id="r-meds" rows="1" placeholder="（選填）"></textarea>
+      </div>
+      <div class="saved-note" id="saved-meds"></div>
+    </div>
+
+    <!-- 3. 太太頭暈 -->
     <div class="card" id="card-dizzy">
       <label class="check-row warn main-row" id="row-dizzy">
-        <span class="num">2</span>
+        <span class="num">3</span>
         <span class="ico">💫</span>
         <span class="check-text"><strong>太太頭暈</strong></span>
         <input type="checkbox" id="chk-dizzy">
@@ -453,12 +466,13 @@
         <label for="r-dizzy">備註 <span>（選填）</span></label>
         <textarea id="r-dizzy" rows="1" placeholder="例如：下晝企起身嗰陣暈咗一陣"></textarea>
       </div>
+      <div class="saved-note" id="saved-dizzy"></div>
     </div>
 
-    <!-- 3. 太太便便 -->
+    <!-- 4. 太太便便 -->
     <div class="card" id="card-wife">
       <label class="check-row main-row" id="row-wife">
-        <span class="num">3</span>
+        <span class="num">4</span>
         <span class="ico">💩</span>
         <span class="check-text"><strong>太太便便</strong></span>
         <input type="checkbox" id="chk-wife">
@@ -487,12 +501,13 @@
         <label for="r-wife">備註 <span>（選填）</span></label>
         <textarea id="r-wife" rows="1" placeholder="（選填）"></textarea>
       </div>
+      <div class="saved-note" id="saved-wife"></div>
     </div>
 
-    <!-- 4. 兒子便便 -->
+    <!-- 5. 兒子便便 -->
     <div class="card" id="card-son">
       <label class="check-row main-row" id="row-son">
-        <span class="num">4</span>
+        <span class="num">5</span>
         <span class="ico">💩</span>
         <span class="check-text"><strong>兒子便便</strong></span>
         <input type="checkbox" id="chk-son">
@@ -521,14 +536,12 @@
         <label for="r-son">備註 <span>（選填）</span></label>
         <textarea id="r-son" rows="1" placeholder="（選填）"></textarea>
       </div>
+      <div class="saved-note" id="saved-son"></div>
     </div>
 
-    <div class="submit-zone">
-      <button class="submit-btn" id="submit-btn" type="button">確認記錄</button>
-      <div class="submit-msg" id="submit-msg"></div>
-    </div>
+    <div class="readonly-note" id="readonly-note" style="display:none">呢日已經過咗 3 日，只可睇，唔可以改。</div>
     <div class="foot-note">只作記錄之用 · 可補填今日及前 3 日</div>
-    <div class="ver-line">v1.0.6 · <button type="button" id="upd-btn">檢查更新</button></div>
+    <div class="ver-line">v1.0.7 · <button type="button" id="upd-btn">檢查更新</button></div>
     <div class="upd-note" id="upd-note"></div>
 
     <datalist id="dl-weight"></datalist>
@@ -630,7 +643,7 @@
 <script>
 (function () {
   'use strict';
-  var APP_VERSION = '1.0.6';
+  var APP_VERSION = '1.0.7';
   var LS_KEY = 'dht-v1';
   var LS_UPDATE_KEY = 'dht-last-update-check';
   var $ = function (id) { return document.getElementById(id); };
@@ -677,32 +690,37 @@
   function saveStore() { localStorage.setItem(LS_KEY, JSON.stringify(store)); }
   function emptyDay() {
     return {
-      status: { weight: '', protein: '', fat: '', sys: '', dia: '', hr: '', remark: '' },
-      dizzy: { has: false, severity: '', remark: '' },
-      wife: { has: false, shape: '', blood: false, remark: '' },
-      son: { has: false, shape: '', blood: false, remark: '' },
+      status: { weight: '', protein: '', fat: '', sys: '', dia: '', hr: '', remark: '', savedAt: '' },
+      meds: { has: false, remark: '', savedAt: '', auto: false },
+      dizzy: { has: false, severity: '', remark: '', savedAt: '', auto: false },
+      wife: { has: false, shape: '', blood: false, remark: '', savedAt: '', auto: false },
+      son: { has: false, shape: '', blood: false, remark: '', savedAt: '', auto: false },
       confirmed: false
     };
   }
   function getDay(s) { return store.days[s] || emptyDay(); }
-  // 匯入返嚟嘅日子可能唔齊四部份（卡 1 全變選填之後，status 可能成個冇晒，
-  // 或者 weight/protein/fat/sys/dia/hr 缺咗）；補返預設空值，
-  // 等 loadForm / 月曆 / 總覽讀唔到 undefined 出錯。原有數值一律唔郁。
+  // v1.0.7：每格有 savedAt（「已儲存 HH:MM」）同 auto（過咗一日未填，自動記為無）；
+  // 舊檔案冇呢兩個欄位，normalizeDay 補返空值，唔郁原有數值。
+  // meds 係 v1.0.7 新加，舊檔案冇就當未記錄。
   function normalizeDay(d) {
     if (!d || typeof d !== 'object') d = {};
     var st = (d.status && typeof d.status === 'object') ? d.status : {};
+    var md = (d.meds && typeof d.meds === 'object') ? d.meds : {};
     var dz = (d.dizzy && typeof d.dizzy === 'object') ? d.dizzy : {};
     var wf = (d.wife && typeof d.wife === 'object') ? d.wife : {};
     var sn = (d.son && typeof d.son === 'object') ? d.son : {};
     var str = function (v) { return v != null ? String(v) : ''; };
+    var hm = function (v) { return /^\d{2}:\d{2}$/.test(str(v)) ? str(v) : ''; };
     return {
       status: {
         weight: str(st.weight), protein: str(st.protein), fat: str(st.fat),
-        sys: str(st.sys), dia: str(st.dia), hr: str(st.hr), remark: str(st.remark)
+        sys: str(st.sys), dia: str(st.dia), hr: str(st.hr), remark: str(st.remark),
+        savedAt: hm(st.savedAt)
       },
-      dizzy: { has: !!dz.has, severity: dz.severity || '', remark: dz.remark || '' },
-      wife: { has: !!wf.has, shape: wf.shape || '', blood: !!wf.blood, remark: wf.remark || '' },
-      son: { has: !!sn.has, shape: sn.shape || '', blood: !!sn.blood, remark: sn.remark || '' },
+      meds: { has: !!md.has, remark: md.remark || '', savedAt: hm(md.savedAt), auto: !!md.auto },
+      dizzy: { has: !!dz.has, severity: dz.severity || '', remark: dz.remark || '', savedAt: hm(dz.savedAt), auto: !!dz.auto },
+      wife: { has: !!wf.has, shape: wf.shape || '', blood: !!wf.blood, remark: wf.remark || '', savedAt: hm(wf.savedAt), auto: !!wf.auto },
+      son: { has: !!sn.has, shape: sn.shape || '', blood: !!sn.blood, remark: sn.remark || '', savedAt: hm(sn.savedAt), auto: !!sn.auto },
       confirmed: !!d.confirmed
     };
   }
@@ -736,13 +754,35 @@
     } catch (e) { /* 遷移失敗都唔阻開 app */ }
   })();
 
+  // ---------- 過咗一日未填，自動記為無（v1.0.7）----------
+  // 開 app 嗰陣，對今日之前、已經有記錄嘅日子，將未填嘅「有 / 無」格
+  // （食藥、頭暈、太太便便、兒子便便）填做 has:false + auto:true。
+  // - 完全冇記錄嘅日子唔會開新記錄；
+  // - 卡 1 狀態永遠唔會自動填（留空）；
+  // - 舊制已確認成日嘅日子唔郁（嗰啲格當日已經係正式記錄）；
+  // - 306 日匯入歷史全部係已確認日子，所以唔受影響。
+  var YN_PARTS = ['meds', 'dizzy', 'wife', 'son'];
+  function applyAutoDefaults() {
+    var tds = ds(today());
+    var changed = false;
+    Object.keys(store.days).forEach(function (k) {
+      if (k >= tds) return; // 今日同將來唔郁
+      var rec = store.days[k];
+      if (!rec || rec.confirmed) return;
+      YN_PARTS.forEach(function (who) {
+        var p = rec[who];
+        if (!p || p.savedAt || p.auto) return;
+        p.has = false; p.auto = true; changed = true;
+      });
+    });
+    if (changed) saveStore();
+  }
+
   // ---------- state ----------
   var selDate = today();
-  var confirmedShown = false;
   var rangeDays = 7;
   var calYear = today().getFullYear(), calMonth = today().getMonth();
   var calFilter = 'all';
-  var dirty = false; // 有未撳確認嘅改動
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -755,12 +795,19 @@
   function statusFilled(st) {
     return !!(st.weight || st.protein || st.fat || st.sys || st.dia || st.hr);
   }
-  // 卡 1 全變選填（v1.0.6）：banner 只計頭暈、太太便便、兒子便便 3 項
+  // v1.0.7：逐格儲存 — 一格有儲存狀態就算填好（有定無都計，明確儲存咗嘅無都計）。
+  // 舊制已確認成日嘅日子，啲格冇 savedAt，都當填好（嗰日已經係正式記錄）。
+  function partDone(p, rec) {
+    if (!p) return false;
+    return !!(p.savedAt || p.auto || (rec && rec.confirmed));
+  }
+  // 卡 1 全變選填（v1.0.6）：banner 唔計卡 1，只計食藥、頭暈、太太便便、兒子便便 4 項
   function cardsReady(rec) {
     var n = 0;
-    if (rec.dizzy.has) n++;
-    if (rec.wife.has) n++;
-    if (rec.son.has) n++;
+    if (partDone(rec.meds, rec)) n++;
+    if (partDone(rec.dizzy, rec)) n++;
+    if (partDone(rec.wife, rec)) n++;
+    if (partDone(rec.son, rec)) n++;
     return n;
   }
 
@@ -774,7 +821,9 @@
       var k = ds(d);
       if (k < earliest) break;
       var rec = store.days[k];
-      if (rec && rec.confirmed && rec[who] && rec[who].has) break; // 有便便（已確認）就斷
+      // 有便便就斷：逐格儲存嘅日子靠 savedAt，舊制已確認嘅日子靠 confirmed；
+      // 未確認草稿唔可以斷（v1.0.5 嘅教訓）。自動記為無（auto）嘅格 has 一定係 false，所以照計。
+      if (rec && rec[who] && rec[who].has && (rec[who].savedAt || rec.confirmed)) break;
       c++; // 未填，或者填咗冇，都當冇便便
       d = addDays(d, -1);
     }
@@ -801,24 +850,25 @@
   // ---------- 今日 banner ----------
   var SVG_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
   var SVG_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
-  function renderBanner(rec) {
-    if (!rec) rec = getDay(ds(selDate));
+  function renderBanner() {
+    var rec = getDay(ds(selDate));
     var n = cardsReady(rec);
-    var done = n >= 3;
+    var done = n >= 4;
     var missing = [];
-    if (!rec.dizzy.has) missing.push('頭暈');
-    if (!rec.wife.has) missing.push('太太便便');
-    if (!rec.son.has) missing.push('兒子便便');
+    if (!partDone(rec.meds, rec)) missing.push('食藥');
+    if (!partDone(rec.dizzy, rec)) missing.push('頭暈');
+    if (!partDone(rec.wife, rec)) missing.push('太太便便');
+    if (!partDone(rec.son, rec)) missing.push('兒子便便');
     var z = $('banner-zone');
     if (!z) return;
     if (done) {
-      z.innerHTML = '<div class="banner done">' + SVG_CHECK + '<div style="flex:1"><div class="bt">今日已填齊（3 / 3）</div>' +
-        '<div class="bs">撳下面「確認記錄」之後，改咗嘢要再確認一次。</div>' +
+      z.innerHTML = '<div class="banner done">' + SVG_CHECK + '<div style="flex:1"><div class="bt">今日已填齊（4 / 4）</div>' +
+        '<div class="bs">每格填完即刻儲存，唔使再確認。</div>' +
         '<div class="progress"><i style="width:100%"></i></div></div></div>';
     } else {
-      z.innerHTML = '<div class="banner todo">' + SVG_CLOCK + '<div style="flex:1"><div class="bt">今日未填齊（' + n + ' / 3）</div>' +
+      z.innerHTML = '<div class="banner todo">' + SVG_CLOCK + '<div style="flex:1"><div class="bt">今日未填齊（' + n + ' / 4）</div>' +
         '<div class="bs">仲差：' + esc(missing.join('、')) + '</div>' +
-        '<div class="progress"><i style="width:' + Math.round(n * 100 / 3) + '%"></i></div></div></div>';
+        '<div class="progress"><i style="width:' + Math.round(n * 100 / 4) + '%"></i></div></div></div>';
     }
     var dot = $('tab-dot');
     if (dot) dot.classList.toggle('show', !done && sameDay(selDate, today()));
@@ -839,7 +889,7 @@
   $('date-prev').addEventListener('click', function () { setDate(addDays(selDate, -1)); });
   $('date-next').addEventListener('click', function () { setDate(addDays(selDate, 1)); });
   $('today-jump').addEventListener('click', function () { setDate(today()); });
-  function setDate(d) { selDate = clampDate(d); dirty = false; confirmedShown = false; loadForm(); }
+  function setDate(d) { selDate = clampDate(d); loadForm(); }
 
   // ---------- 昨日數值自動填入 ----------
   function yesterdayStatus() {
@@ -848,6 +898,9 @@
   }
 
   // ---------- 今日表單 ----------
+  function isEditable() {
+    return selDate >= minBackfill() && selDate <= today();
+  }
   function loadForm() {
     var key = ds(selDate);
     var rec = getDay(key);
@@ -860,7 +913,7 @@
         inherited = true;
       }
     }
-    $('inherit-note').classList.toggle('show', inherited && !rec.confirmed);
+    $('inherit-note').classList.toggle('show', inherited);
     $('f-weight').value = st.weight || '';
     $('f-protein').value = st.protein || '';
     $('f-fat').value = st.fat || '';
@@ -868,6 +921,8 @@
     $('f-dia').value = st.dia || '';
     $('f-hr').value = st.hr || '';
     $('r-status').value = st.remark || '';
+    $('chk-meds').checked = !!rec.meds.has;
+    $('r-meds').value = rec.meds.remark || '';
     $('chk-dizzy').checked = !!rec.dizzy.has;
     setChips('dizzy-sev', rec.dizzy.severity);
     $('r-dizzy').value = rec.dizzy.remark || '';
@@ -879,10 +934,43 @@
     setChips('son-shape', rec.son.shape);
     $('chk-son-blood').checked = !!rec.son.blood;
     $('r-son').value = rec.son.remark || '';
-    confirmedShown = !!rec.confirmed;
-    dirty = false;
+    // 過咗 3 日就只可睇：成頁表單停用
+    var editable = isEditable();
+    document.querySelectorAll('#view-today input, #view-today textarea, #view-today [data-chips] button').forEach(function (el) {
+      el.disabled = !editable;
+    });
+    $('readonly-note').style.display = editable ? 'none' : 'block';
+    renderSavedNotes(rec);
     refreshPills();
     renderDateHead();
+  }
+
+  // 每格格底嘅儲存狀態：已儲存 HH:MM / 未填寫，自動記為無 / 舊制已確認（冇時間）
+  function savedNoteText(p, rec) {
+    if (!p) return null;
+    if (p.auto) return { text: '未填寫，自動記為無', auto: true };
+    if (p.savedAt) return { text: '已儲存 ' + p.savedAt, auto: false };
+    if (rec && rec.confirmed) return { text: '已記錄', auto: false };
+    return null;
+  }
+  function setSavedNote(id, p, rec) {
+    var el = $(id);
+    if (!el) return;
+    var n = savedNoteText(p, rec);
+    if (n) {
+      el.textContent = n.text;
+      el.className = 'saved-note show' + (n.auto ? ' auto' : '');
+    } else {
+      el.textContent = '';
+      el.className = 'saved-note';
+    }
+  }
+  function renderSavedNotes(rec) {
+    setSavedNote('saved-status', rec.status, rec);
+    setSavedNote('saved-meds', rec.meds, rec);
+    setSavedNote('saved-dizzy', rec.dizzy, rec);
+    setSavedNote('saved-wife', rec.wife, rec);
+    setSavedNote('saved-son', rec.son, rec);
   }
 
   function refreshPills() {
@@ -898,6 +986,7 @@
       pill.className = 'pill ' + (statusFilled(st) ? 'filled' : 'empty');
     }
     var d = collectForm();
+    checkUI('row-meds', 'chk-meds', 'state-meds', d.meds.has, '食左', '未食');
     checkUI('row-dizzy', 'chk-dizzy', 'state-dizzy', d.dizzy.has, '有', '無');
     checkUI('row-wife', 'chk-wife', 'state-wife', d.wife.has, '有', '無');
     checkUI('row-son', 'chk-son', 'state-son', d.son.has, '有', '無');
@@ -908,10 +997,8 @@
     $('wife-blood-block').classList.toggle('show', d.wife.has);
     $('son-shape-block').classList.toggle('show', d.son.has);
     $('son-blood-block').classList.toggle('show', d.son.has);
-    renderBanner(d);
-    var btn = $('submit-btn');
-    btn.classList.toggle('confirmed', confirmedShown && !dirty);
-    btn.textContent = (confirmedShown && !dirty) ? '已確認 ✓' : '確認記錄';
+    renderSavedNotes(getDay(ds(selDate)));
+    renderBanner();
   }
 
   function checkUI(rowId, chkId, stateId, isYes, yesText, noText) {
@@ -937,7 +1024,8 @@
       if (!b) return;
       wrap.querySelectorAll('button').forEach(function (x) { x.classList.remove('on'); });
       b.classList.add('on');
-      markDirty();
+      var g = wrap.getAttribute('data-chips');
+      savePart(g === 'dizzy-sev' ? 'dizzy' : (g === 'wife-shape' ? 'wife' : 'son'));
     });
   });
 
@@ -951,49 +1039,48 @@
         remark: $('r-status').value.trim()
       },
       dizzy: { has: $('chk-dizzy').checked, severity: getChip('dizzy-sev'), remark: $('r-dizzy').value.trim() },
+      meds: { has: $('chk-meds').checked, remark: $('r-meds').value.trim() },
       wife: { has: $('chk-wife').checked, shape: getChip('wife-shape'), blood: $('chk-wife-blood').checked, remark: $('r-wife').value.trim() },
       son: { has: $('chk-son').checked, shape: getChip('son-shape'), blood: $('chk-son-blood').checked, remark: $('r-son').value.trim() }
     };
   }
-  function markDirty() {
-    dirty = true;
-    var msg = $('submit-msg');
-    msg.className = 'submit-msg'; msg.textContent = '';
-    refreshPills();
+  // ---------- 逐格儲存（v1.0.7）：冇咗確認掣，每格一郁就即刻存 ----------
+  function nowHM() {
+    var d = new Date();
+    var h = d.getHours(), m = d.getMinutes();
+    return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m);
   }
-  ['f-weight', 'f-protein', 'f-fat', 'f-sys', 'f-dia', 'f-hr', 'r-status', 'r-dizzy', 'r-wife', 'r-son'].forEach(function (id) {
-    $(id).addEventListener('input', markDirty);
-  });
-  ['chk-dizzy', 'chk-wife', 'chk-son', 'chk-wife-blood', 'chk-son-blood'].forEach(function (id) {
-    $(id).addEventListener('change', markDirty);
-  });
-
-  $('submit-btn').addEventListener('click', function () {
-    var d = collectForm();
-    var missing = [];
-    if (d.dizzy.has && !d.dizzy.severity) missing.push('頭暈程度');
-    if (d.wife.has && !d.wife.shape) missing.push('太太便便形狀');
-    if (d.son.has && !d.son.shape) missing.push('兒子便便形狀');
-    var msg = $('submit-msg');
-    if (missing.length) {
-      msg.className = 'submit-msg err show';
-      msg.textContent = '仲差：' + missing.join('、') + '。填好再撳確認。';
-      return;
-    }
+  function savePart(who) {
+    if (!isEditable()) return;
     var key = ds(selDate);
-    var rec = getDay(key);
-    rec.status = d.status; rec.dizzy = d.dizzy; rec.wife = d.wife; rec.son = d.son;
-    rec.confirmed = true;
-    store.days[key] = rec;
+    var rec = store.days[key];
+    if (!rec) { rec = normalizeDay(emptyDay()); store.days[key] = rec; }
+    var d = collectForm();
+    var t = nowHM();
+    if (who === 'status') {
+      rec.status = d.status;
+      // 卡 1 全選填：有數值先算「已儲存」，吉晒就唔顯示時間（但會存低個吉狀態）
+      rec.status.savedAt = statusFilled(d.status) ? t : '';
+    } else {
+      rec[who] = d[who];
+      rec[who].savedAt = t;
+      rec[who].auto = false; // 人手改過就唔再係自動記為無
+    }
     saveStore();
-    confirmedShown = true;
-    dirty = false;
-    msg.className = 'submit-msg ok show';
-    msg.textContent = '✓ 已確認 ' + fmtDate(selDate) + ' 嘅記錄。';
     refreshPills();
     renderAlerts();
     renderCal();
     renderDash();
+  }
+  // 狀態數字 + 備註：離開嗰格（change）先存，唔會打字打到一半就存
+  [['f-weight', 'status'], ['f-protein', 'status'], ['f-fat', 'status'], ['f-sys', 'status'], ['f-dia', 'status'], ['f-hr', 'status'],
+   ['r-status', 'status'], ['r-meds', 'meds'], ['r-dizzy', 'dizzy'], ['r-wife', 'wife'], ['r-son', 'son']].forEach(function (pair) {
+    $(pair[0]).addEventListener('change', function () { savePart(pair[1]); });
+  });
+  // checkbox 一撳即存
+  [['chk-meds', 'meds'], ['chk-dizzy', 'dizzy'], ['chk-wife', 'wife'], ['chk-son', 'son'],
+   ['chk-wife-blood', 'wife'], ['chk-son-blood', 'son']].forEach(function (pair) {
+    $(pair[0]).addEventListener('change', function () { savePart(pair[1]); });
   });
 
   // ---------- pull-down list (datalist) ----------
@@ -1034,9 +1121,14 @@
   });
 
   // ---------- calendar ----------
+  // 有儲存咗（savedAt）或者舊制已確認（confirmed）先算正式記錄
+  function partRecorded(p, rec) {
+    return !!(p && (p.savedAt || (rec && rec.confirmed)));
+  }
   function bowelMark(rec, who, filter) {
     if (filter !== 'all' && filter !== who) return '';
     if (!rec || !rec[who] || !rec[who].has) return '';
+    if (!partRecorded(rec[who], rec)) return '';
     var cls = who === 'wife' ? 'wife' : 'son';
     var pre = who === 'wife' ? '太' : '兒';
     if (rec[who].blood) return '<span class="person-mark ' + cls + '">' + pre + '💩🩸</span>';
@@ -1055,10 +1147,11 @@
       var key = ds(date);
       var rec = store.days[key];
       var marks = '';
-      if (rec && rec.confirmed) {
+      // v1.0.7：唔再等成日確認，按每格儲存狀態出標記（有儲存咗嘅便便先出）
+      if (rec) {
         marks += bowelMark(rec, 'wife', calFilter);
         marks += bowelMark(rec, 'son', calFilter);
-        if (calFilter !== 'son' && rec.dizzy.has) marks += '<span style="font-size:11.5px">💫</span>';
+        if (calFilter !== 'son' && rec.dizzy && rec.dizzy.has && partRecorded(rec.dizzy, rec)) marks += '<span style="font-size:11.5px">💫</span>';
         if (!marks) marks = '<span class="none-mark">—</span>';
       }
       var cls = 'day';
@@ -1081,7 +1174,6 @@
     var cell = e.target.closest('.day');
     if (!cell || cell.classList.contains('blank') || cell.classList.contains('future')) return;
     selDate = fromDs(cell.getAttribute('data-date'));
-    dirty = false; confirmedShown = false;
     renderCal();
   });
   $('cal-prev').addEventListener('click', function () { shiftMonth(-1); });
@@ -1102,12 +1194,27 @@
     renderCal();
   });
 
+  // strict: for the medicine part, a legacy confirmed day (pre-v1.0.7, no meds card existed)
+  // does NOT count as recorded — meds was never entered on those days.
+  function partNoteHTML(p, rec, strict) {
+    if (!p) return '';
+    if (p.auto) return '<span class="rm">未填寫，自動記為無</span>';
+    if (p.savedAt) return '<span class="rm">已儲存 ' + esc(p.savedAt) + '</span>';
+    if (!strict && rec && rec.confirmed) return '<span class="rm">已記錄</span>';
+    return '';
+  }
+  function ynRow(label, p, rec, yesText, strict) {
+    var recorded = strict ? !!(p.savedAt || p.auto) : partRecorded(p, rec);
+    var v = !recorded ? '未記錄' : (p.has ? yesText : '無');
+    return '<div class="dd-row"><span class="k">' + label + '</span><span class="v">' + v + partNoteHTML(p, rec, strict) +
+      (p && p.remark ? '<span class="rm">「' + esc(p.remark) + '」</span>' : '') + '</span></div>';
+  }
   function renderDayDetail() {
     var key = ds(selDate);
     var rec = store.days[key];
     var el = $('day-detail');
     var html = '<h3>' + fmtDateFull(selDate) + '</h3>';
-    if (!rec || !rec.confirmed) {
+    if (!rec) {
       html += '<div class="dd-row"><span class="k">狀態</span><span class="v">未填</span></div>';
     } else {
       var st = rec.status;
@@ -1117,13 +1224,15 @@
       if (st.fat) statusTxt.push('Fat ' + esc(st.fat) + '%');
       if (st.sys && st.dia) statusTxt.push('血壓 ' + esc(st.sys) + '/' + esc(st.dia));
       if (st.hr) statusTxt.push('心跳 ' + esc(st.hr) + ' bpm');
-      html += '<div class="dd-row"><span class="k">太太當日狀態</span><span class="v">' + (statusTxt.length ? statusTxt.join(' · ') : '—') +
+      html += '<div class="dd-row"><span class="k">太太當日狀態</span><span class="v">' + (statusTxt.length ? statusTxt.join(' · ') : '—') + partNoteHTML(st, rec) +
         (st.remark ? '<span class="rm">「' + esc(st.remark) + '」</span>' : '') + '</span></div>';
-      html += '<div class="dd-row"><span class="k">太太頭暈</span><span class="v">' +
-        (rec.dizzy.has ? '有（' + esc(rec.dizzy.severity || '未選程度') + '）' : '無') +
+      html += ynRow('太太食藥', rec.meds, rec, '食左', true);
+      var dizTxt = !partRecorded(rec.dizzy, rec) ? '未記錄' :
+        (rec.dizzy.has ? '有（' + esc(rec.dizzy.severity || '未選程度') + '）' : '無');
+      html += '<div class="dd-row"><span class="k">太太頭暈</span><span class="v">' + dizTxt + partNoteHTML(rec.dizzy, rec) +
         (rec.dizzy.remark ? '<span class="rm">「' + esc(rec.dizzy.remark) + '」</span>' : '') + '</span></div>';
-      html += bowelRow('太太便便', rec.wife);
-      html += bowelRow('兒子便便', rec.son);
+      html += bowelRow('太太便便', rec.wife, rec);
+      html += bowelRow('兒子便便', rec.son, rec);
     }
     if (selDate <= today() && selDate >= minBackfill()) {
       html += '<button class="goto-btn" id="goto-day">' + (sameDay(selDate, today()) ? '去今日頁填' : '去補填呢日') + '</button>';
@@ -1134,13 +1243,14 @@
     var g = $('goto-day');
     if (g) g.addEventListener('click', function () { loadForm(); switchTab('today'); });
   }
-  function bowelRow(label, b) {
+  function bowelRow(label, b, rec) {
     var txt;
-    if (!b.has) txt = '無';
+    if (!partRecorded(b, rec)) txt = '未記錄';
+    else if (!b.has) txt = '無';
     else {
       txt = '有' + (b.shape ? ' · ' + esc(b.shape) : '') + (b.blood ? ' · 有血' : '');
     }
-    return '<div class="dd-row"><span class="k">' + label + '</span><span class="v">' + txt +
+    return '<div class="dd-row"><span class="k">' + label + '</span><span class="v">' + txt + partNoteHTML(b, rec) +
       (b.remark ? '<span class="rm">「' + esc(b.remark) + '」</span>' : '') + '</span></div>';
   }
 
@@ -1149,15 +1259,15 @@
     var diz = 0, bowel = 0, blood = 0, wSum = 0, wN = 0, sysSum = 0, diaSum = 0, bpN = 0;
     for (var d = 1; d <= daysInMonth; d++) {
       var rec = store.days[ds(new Date(y, m, d))];
-      if (!rec || !rec.confirmed) continue;
+      if (!rec) continue; // v1.0.7：唔再睇 confirmed，有記錄就計（每格儲存狀態）
       if (who === 'wife') {
-        if (rec.dizzy.has) diz++;
+        if (rec.dizzy.has && partRecorded(rec.dizzy, rec)) diz++;
         var w = num(rec.status.weight); if (w != null) { wSum += w; wN++; }
         var s = num(rec.status.sys), dia = num(rec.status.dia);
         if (s != null && dia != null) { sysSum += s; diaSum += dia; bpN++; }
       }
       var b = rec[who];
-      if (b && b.has) { bowel++; if (b.blood) blood++; }
+      if (b && b.has && partRecorded(b, rec)) { bowel++; if (b.blood) blood++; }
     }
     return {
       diz: diz, bowel: bowel, blood: blood,
@@ -1237,10 +1347,10 @@
     var wPts = [], bpPts = [];
     recs.forEach(function (r) {
       var rec = r.rec;
-      if (!rec || !rec.confirmed) return;
-      if (rec.dizzy.has) { diz++; if (sev[rec.dizzy.severity] != null) sev[rec.dizzy.severity]++; }
-      if (rec.wife.has) wb++;
-      if (rec.son.has) sb++;
+      if (!rec) return; // v1.0.7：唔再睇 confirmed，有記錄就計
+      if (rec.dizzy.has && partRecorded(rec.dizzy, rec)) { diz++; if (sev[rec.dizzy.severity] != null) sev[rec.dizzy.severity]++; }
+      if (rec.wife.has && partRecorded(rec.wife, rec)) wb++;
+      if (rec.son.has && partRecorded(rec.son, rec)) sb++;
       var w = num(rec.status.weight);
       wPts.push({ date: r.date, values: { w: w } });
       var s = num(rec.status.sys), dia = num(rec.status.dia);
@@ -1331,7 +1441,7 @@
       if (!/^\d{4}-\d{2}-\d{2}$/.test(keys[i])) return null;
       var d = data.days[keys[i]];
       if (!d || typeof d !== 'object') return null;
-      var parts = ['status', 'dizzy', 'wife', 'son'];
+      var parts = ['status', 'meds', 'dizzy', 'wife', 'son']; // meds 係 v1.0.7 新加，舊檔案冇都得
       for (var j = 0; j < parts.length; j++) {
         if (d[parts[j]] != null && typeof d[parts[j]] !== 'object') return null;
       }
@@ -1359,6 +1469,7 @@
       Object.keys(data.days).forEach(function (k) { data.days[k] = normalizeDay(data.days[k]); });
       store = data;
       saveStore();
+      applyAutoDefaults(); // 匯入嘅舊日子如果有未確認又未填嘅格，都按新 rule 自動記為無
       loadForm();
       renderAlerts();
       renderCal();
@@ -1377,6 +1488,7 @@
   });
 
   // ---------- init ----------
+  applyAutoDefaults(); // 過咗一日未填嘅格，開 app 嗰陣自動記為無
   buildDatalists();
   loadForm();
   renderAlerts();

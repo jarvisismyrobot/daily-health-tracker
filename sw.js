@@ -1,5 +1,5 @@
 // 每日健康記錄 service worker — 離線快取，裝完冇網都開得返
-const CACHE = "daily-health-tracker-v1.0.6";
+const CACHE = "daily-health-tracker-v1.0.7";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png", "./icon-180.png"];
 
 self.addEventListener("install", (e) => {
