@@ -148,6 +148,8 @@
   .bp-row { display: grid; grid-template-columns: 1fr auto 1fr 1fr; gap: 6px; align-items: end; margin-top: 6px; }
   .bp-row .slash { font-size: 18px; color: var(--faint); padding-bottom: 8px; font-weight: 700; }
   .remark { margin-top: 7px; }
+  /* v1.0.8：備註平時收埋 — 有剔先顯示；收埋只係唔顯示，文字唔會唔見 */
+  .remark.hidden { display: none; }
   .remark textarea {
     width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2);
     padding: 7px 10px; font-size: 14.5px; resize: vertical; min-height: 34px; outline: none;
@@ -422,7 +424,7 @@
           <div class="unit-wrap"><input id="f-hr" size="1" class="wide-unit" list="dl-hr" inputmode="numeric" autocomplete="off" placeholder="—"><span class="unit">bpm</span><span class="dd">▾</span></div>
         </div>
       </div>
-      <div class="remark">
+      <div class="remark" id="remark-status">
         <label for="r-status">備註 <span>（選填）</span></label>
         <textarea id="r-status" rows="1" placeholder="例如：今朝未食早餐就量"></textarea>
       </div>
@@ -438,7 +440,7 @@
         <input type="checkbox" id="chk-meds">
         <span class="check-state" id="state-meds">未食</span>
       </label>
-      <div class="remark">
+      <div class="remark" id="remark-meds">
         <label for="r-meds">備註 <span>（選填）</span></label>
         <textarea id="r-meds" rows="1" placeholder="（選填）"></textarea>
       </div>
@@ -462,7 +464,7 @@
           <button type="button" data-v="重">重 <span class="sev-ico">💫💫💫💫💫</span></button>
         </div>
       </div>
-      <div class="remark">
+      <div class="remark" id="remark-dizzy">
         <label for="r-dizzy">備註 <span>（選填）</span></label>
         <textarea id="r-dizzy" rows="1" placeholder="例如：下晝企起身嗰陣暈咗一陣"></textarea>
       </div>
@@ -497,7 +499,7 @@
           </label>
         </div>
       </div>
-      <div class="remark">
+      <div class="remark" id="remark-wife">
         <label for="r-wife">備註 <span>（選填）</span></label>
         <textarea id="r-wife" rows="1" placeholder="（選填）"></textarea>
       </div>
@@ -532,7 +534,7 @@
           </label>
         </div>
       </div>
-      <div class="remark">
+      <div class="remark" id="remark-son">
         <label for="r-son">備註 <span>（選填）</span></label>
         <textarea id="r-son" rows="1" placeholder="（選填）"></textarea>
       </div>
@@ -541,7 +543,7 @@
 
     <div class="readonly-note" id="readonly-note" style="display:none">呢日已經過咗 3 日，只可睇，唔可以改。</div>
     <div class="foot-note">只作記錄之用 · 可補填今日及前 3 日</div>
-    <div class="ver-line">v1.0.7 · <button type="button" id="upd-btn">檢查更新</button></div>
+    <div class="ver-line">v1.0.8 · <button type="button" id="upd-btn">檢查更新</button></div>
     <div class="upd-note" id="upd-note"></div>
 
     <datalist id="dl-weight"></datalist>
@@ -643,7 +645,7 @@
 <script>
 (function () {
   'use strict';
-  var APP_VERSION = '1.0.7';
+  var APP_VERSION = '1.0.8';
   var LS_KEY = 'dht-v1';
   var LS_UPDATE_KEY = 'dht-last-update-check';
   var $ = function (id) { return document.getElementById(id); };
@@ -997,8 +999,19 @@
     $('wife-blood-block').classList.toggle('show', d.wife.has);
     $('son-shape-block').classList.toggle('show', d.son.has);
     $('son-blood-block').classList.toggle('show', d.son.has);
+    updateRemarkVisibility(d);
     renderSavedNotes(getDay(ds(selDate)));
     renderBanner();
+  }
+
+  // v1.0.8：備註平時收埋 — 有剔先顯示；卡 1 冇 checkbox，有數值先顯示。
+  // 收埋只係唔顯示：textarea 嘅文字同儲存完全唔受影響，剔返就即刻見返。
+  function updateRemarkVisibility(d) {
+    $('remark-status').classList.toggle('hidden', !statusFilled(d.status));
+    $('remark-meds').classList.toggle('hidden', !d.meds.has);
+    $('remark-dizzy').classList.toggle('hidden', !d.dizzy.has);
+    $('remark-wife').classList.toggle('hidden', !d.wife.has);
+    $('remark-son').classList.toggle('hidden', !d.son.has);
   }
 
   function checkUI(rowId, chkId, stateId, isYes, yesText, noText) {
@@ -1081,6 +1094,10 @@
   [['chk-meds', 'meds'], ['chk-dizzy', 'dizzy'], ['chk-wife', 'wife'], ['chk-son', 'son'],
    ['chk-wife-blood', 'wife'], ['chk-son-blood', 'son']].forEach(function (pair) {
     $(pair[0]).addEventListener('change', function () { savePart(pair[1]); });
+  });
+  // v1.0.8：卡 1 備註 — 打字嗰陣即刻更新顯示（淨係顯示，唔儲存；儲存照舊等 change）
+  ['f-weight', 'f-protein', 'f-fat', 'f-sys', 'f-dia', 'f-hr'].forEach(function (id) {
+    $(id).addEventListener('input', function () { updateRemarkVisibility(collectForm()); });
   });
 
   // ---------- pull-down list (datalist) ----------
